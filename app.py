@@ -1,22 +1,45 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_wtf.csrf import CSRFProtect  # Added
+from werkzeug.utils import secure_filename  # Added
 import os
 from datetime import datetime
 import random
 import json
 import uuid
+import re  # Added
 
 app = Flask(__name__)
 
 # Configuration for Render
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///scavenger_hunt.db')
+
+# Fix database URI for Render/Heroku
+database_url = os.environ.get('DATABASE_URL', 'sqlite:///scavenger_hunt.db')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Session security
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+# File upload configuration
+UPLOAD_FOLDER = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 
 # Initialize extensions
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+csrf = CSRFProtect(app)  # Initialize CSRF protection
+
+# Create upload folder if it doesn't exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Database Models
 class Teacher(db.Model):
@@ -41,7 +64,7 @@ class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     hunt_id = db.Column(db.Integer, db.ForeignKey('hunt.id'), nullable=False)
     question_order = db.Column(db.Integer, default=0)  # Order of questions
-    question_type = db.Column(db.String(50), nullable=False)  # multiple-choice, text
+    question_type = db.Column(db.String(50), nullable=False)  # multiple-choice, text, image
     text = db.Column(db.Text, nullable=False)
     choices = db.Column(db.Text)  # JSON string for multiple choice
     correct_answer = db.Column(db.Text, nullable=False)
@@ -49,6 +72,7 @@ class Question(db.Model):
     next_location_hint = db.Column(db.Text)  # Hint for NEXT location
     qr_token = db.Column(db.String(100), unique=True)
     points = db.Column(db.Integer, default=10)
+    image_filename = db.Column(db.String(200))  # For image questions
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Helper Functions
@@ -343,6 +367,40 @@ def toggle_hunt_active(hunt_id):
     status = "active" if hunt.is_active else "inactive"
     return jsonify({'success': True, 'is_active': hunt.is_active, 'message': f'Hunt is now {status}'})
 
+@app.route("/teacher/hunt/<int:hunt_id>/delete", methods=['DELETE'])
+def delete_hunt(hunt_id):
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
+    
+    hunt = Hunt.query.get_or_404(hunt_id)
+    if hunt.teacher_id != session['user_id']:
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+    
+    try:
+        # Delete all questions first
+        Question.query.filter_by(hunt_id=hunt_id).delete()
+        # Delete the hunt
+        db.session.delete(hunt)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Hunt deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/teacher/hunt/<int:hunt_id>/edit")
+def edit_hunt(hunt_id):
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return redirect(url_for('teacher_login'))
+    
+    hunt = Hunt.query.get_or_404(hunt_id)
+    if hunt.teacher_id != session['user_id']:
+        flash('Access denied', 'danger')
+        return redirect(url_for('teacher_dashboard'))
+    
+    # For now, redirect to view page
+    flash('Edit functionality coming soon!', 'info')
+    return redirect(url_for('view_hunt', hunt_id=hunt_id))
+
 # Student Routes
 @app.route("/student/dashboard")
 def student_dashboard():
@@ -444,7 +502,7 @@ def student_question(qr_token):
         try:
             choices = json.loads(question.choices)
             # Filter out empty choices
-            choices = [choice for choice in choices if choice.strip()]
+            choices = [choice for choice in choices if choice and choice.strip()]
         except:
             choices = []
     
@@ -494,6 +552,9 @@ def submit_answer():
         is_correct = answer.strip() == question.correct_answer.strip()
     elif question.question_type == 'text':
         is_correct = answer.lower().strip() == question.correct_answer.lower().strip()
+    elif question.question_type == 'image':
+        # For image questions, any uploaded image is considered correct
+        is_correct = True
     
     # Update progress
     if qr_token not in progress['completed_questions']:
@@ -524,6 +585,85 @@ def submit_answer():
     }
     
     return jsonify(response)
+
+@app.route("/api/student/submit-image", methods=['POST'])
+def submit_image():
+    """Handle image upload submissions"""
+    if 'image' not in request.files:
+        return jsonify({'error': 'No image uploaded'}), 400
+    
+    image_file = request.files['image']
+    qr_token = request.form.get('qr_token')
+    
+    if image_file.filename == '':
+        return jsonify({'error': 'No image selected'}), 400
+    
+    # Validate file type
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+    filename = secure_filename(image_file.filename)
+    if '.' not in filename or filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+        return jsonify({'error': 'Invalid file type. Allowed: PNG, JPG, JPEG, GIF'}), 400
+    
+    # Validate file size (max 5MB)
+    image_file.seek(0, 2)  # Seek to end
+    file_size = image_file.tell()
+    image_file.seek(0)  # Reset to beginning
+    if file_size > 5 * 1024 * 1024:
+        return jsonify({'error': 'File too large. Maximum size is 5MB'}), 400
+    
+    # Save the file
+    unique_filename = f"{uuid.uuid4()}_{filename}"
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+    image_file.save(filepath)
+    
+    # Get question and update progress
+    question = Question.query.filter_by(qr_token=qr_token).first()
+    if not question:
+        # Delete the uploaded file if question not found
+        os.remove(filepath)
+        return jsonify({'error': 'Question not found'}), 404
+    
+    # For image questions, store the filename
+    question.image_filename = unique_filename
+    db.session.commit()
+    
+    # Initialize or update student progress
+    hunt_id_str = str(question.hunt_id)
+    if 'progress' not in session:
+        session['progress'] = {}
+    if hunt_id_str not in session['progress']:
+        session['progress'][hunt_id_str] = {
+            'current_question': question.question_order,
+            'score': 0,
+            'completed_questions': [],
+            'started_at': datetime.utcnow().isoformat()
+        }
+    
+    progress = session['progress'][hunt_id_str]
+    
+    # For image questions, always count as correct
+    if qr_token not in progress['completed_questions']:
+        progress['completed_questions'].append(qr_token)
+        progress['score'] += question.points
+        progress['current_question'] = question.question_order + 1
+    
+    session.modified = True
+    
+    # Get next question
+    next_question = Question.query.filter_by(
+        hunt_id=question.hunt_id, 
+        question_order=question.question_order + 1
+    ).first()
+    
+    return jsonify({
+        'success': True,
+        'correct': True,
+        'points_earned': question.points,
+        'image_url': f"/static/uploads/{unique_filename}",
+        'next_location_hint': question.next_location_hint,
+        'next_qr_token': next_question.qr_token if next_question else None,
+        'has_next': next_question is not None
+    })
 
 @app.route("/student/progress/<int:hunt_id>")
 def student_progress(hunt_id):
@@ -561,6 +701,20 @@ def logout():
     session.clear()
     flash('Logged out successfully', 'info')
     return redirect(url_for('home'))
+
+# Error handlers
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('error.html',
+                         message='Page Not Found',
+                         details='The page you are looking for does not exist.'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('error.html',
+                         message='Internal Server Error',
+                         details='Something went wrong on our end.'), 500
 
 # Initialize database
 with app.app_context():
