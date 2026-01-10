@@ -35,16 +35,18 @@ class Hunt(db.Model):
     teacher_id = db.Column(db.Integer, db.ForeignKey('teacher.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=False)
-    questions = db.relationship('Question', backref='hunt', lazy=True)
+    questions = db.relationship('Question', backref='hunt', lazy=True, order_by='Question.question_order')
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     hunt_id = db.Column(db.Integer, db.ForeignKey('hunt.id'), nullable=False)
+    question_order = db.Column(db.Integer, default=0)  # Order of questions
     question_type = db.Column(db.String(50), nullable=False)  # multiple-choice, text
     text = db.Column(db.Text, nullable=False)
     choices = db.Column(db.Text)  # JSON string for multiple choice
     correct_answer = db.Column(db.Text, nullable=False)
-    clue = db.Column(db.Text)
+    hint = db.Column(db.Text)  # Hint for THIS location
+    next_location_hint = db.Column(db.Text)  # Hint for NEXT location
     qr_token = db.Column(db.String(100), unique=True)
     points = db.Column(db.Integer, default=10)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -54,6 +56,22 @@ def get_qr_url(qr_token):
     """Generate QR URL"""
     base_url = request.host_url.rstrip('/')
     return f"{base_url}/student/question/{qr_token}"
+
+def generate_qr_text(qr_token):
+    """Generate text representation of QR code"""
+    qr_url = get_qr_url(qr_token)
+    return f"""
+╔══════════════════════════════════════╗
+║         SCAVENGER HUNT QR CODE       ║
+╠══════════════════════════════════════╣
+║ URL: {qr_url[:35]:<35} ║
+║       {qr_url[35:]:<35} ║
+╠══════════════════════════════════════╣
+║  Scan this URL with any QR scanner   ║
+║  Or visit directly:                  ║
+║  {qr_url:<35} ║
+╚══════════════════════════════════════╝
+"""
 
 # Routes
 @app.route("/")
@@ -135,25 +153,63 @@ def create_hunt():
         db.session.add(hunt)
         db.session.commit()
         
-        # Create sample questions
-        for i in range(3):
-            question = Question(
-                hunt_id=hunt.id,
-                question_type='multiple-choice',
-                text=f'Sample question {i+1}?',
-                choices=json.dumps(['Option A', 'Option B', 'Option C', 'Option D']),
-                correct_answer='Option A',
-                clue=f'Clue for question {i+1}',
-                qr_token=str(uuid.uuid4()),
-                points=10
-            )
-            db.session.add(question)
-        db.session.commit()
-        
-        flash('Hunt created successfully with 3 sample questions!', 'success')
-        return redirect(url_for('view_hunt', hunt_id=hunt.id))
+        flash('Hunt created successfully! Now add questions.', 'success')
+        return redirect(url_for('add_question', hunt_id=hunt.id))
     
     return render_template('create_hunt.html')
+
+@app.route("/teacher/hunt/<int:hunt_id>/add-question", methods=['GET', 'POST'])
+def add_question(hunt_id):
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return redirect(url_for('teacher_login'))
+    
+    hunt = Hunt.query.get_or_404(hunt_id)
+    if hunt.teacher_id != session['user_id']:
+        flash('Access denied', 'danger')
+        return redirect(url_for('teacher_dashboard'))
+    
+    if request.method == 'POST':
+        question_type = request.form['question_type']
+        text = request.form['text']
+        correct_answer = request.form['correct_answer']
+        hint = request.form.get('hint', '')  # Hint for this location
+        next_location_hint = request.form.get('next_location_hint', '')  # Hint for next location
+        points = int(request.form.get('points', 10))
+        
+        # Get next question order
+        last_question = Question.query.filter_by(hunt_id=hunt_id).order_by(Question.question_order.desc()).first()
+        next_order = last_question.question_order + 1 if last_question else 1
+        
+        # Process choices for multiple-choice
+        choices = []
+        if question_type == 'multiple-choice':
+            choices = [
+                request.form.get('choice1', ''),
+                request.form.get('choice2', ''),
+                request.form.get('choice3', ''),
+                request.form.get('choice4', '')
+            ]
+        
+        question = Question(
+            hunt_id=hunt_id,
+            question_order=next_order,
+            question_type=question_type,
+            text=text,
+            choices=json.dumps(choices) if choices else '',
+            correct_answer=correct_answer,
+            hint=hint,
+            next_location_hint=next_location_hint,
+            qr_token=str(uuid.uuid4()),
+            points=points
+        )
+        
+        db.session.add(question)
+        db.session.commit()
+        
+        flash(f'Question {next_order} added successfully!', 'success')
+        return redirect(url_for('view_hunt', hunt_id=hunt_id))
+    
+    return render_template('add_question.html', hunt=hunt)
 
 @app.route("/teacher/hunt/<int:hunt_id>/view")
 def view_hunt(hunt_id):
@@ -165,21 +221,45 @@ def view_hunt(hunt_id):
         flash('Access denied', 'danger')
         return redirect(url_for('teacher_dashboard'))
     
-    # Get QR URLs for each question
-    questions_with_qr = []
+    # Get all questions with QR info
+    questions = []
     for question in hunt.questions:
         qr_url = get_qr_url(question.qr_token)
-        questions_with_qr.append({
+        qr_text = generate_qr_text(question.qr_token)
+        
+        questions.append({
             'id': question.id,
+            'order': question.question_order,
             'text': question.text,
+            'hint': question.hint,
+            'next_location_hint': question.next_location_hint,
             'qr_token': question.qr_token,
             'qr_url': qr_url,
-            'qr_text': f"URL: {qr_url}\nScan with any QR code app"
+            'qr_text': qr_text,
+            'is_last': question.question_order == len(hunt.questions)
         })
+    
+    # Sort by question order
+    questions.sort(key=lambda x: x['order'])
     
     return render_template('view_hunt.html', 
                          hunt=hunt, 
-                         questions=questions_with_qr)
+                         questions=questions)
+
+@app.route("/teacher/hunt/<int:hunt_id>/toggle-active", methods=['POST'])
+def toggle_hunt_active(hunt_id):
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return jsonify({'error': 'Not logged in'}), 401
+    
+    hunt = Hunt.query.get_or_404(hunt_id)
+    if hunt.teacher_id != session['user_id']:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    hunt.is_active = not hunt.is_active
+    db.session.commit()
+    
+    status = "active" if hunt.is_active else "inactive"
+    return jsonify({'success': True, 'is_active': hunt.is_active, 'message': f'Hunt is now {status}'})
 
 # Student Routes
 @app.route("/student/dashboard")
@@ -187,11 +267,41 @@ def student_dashboard():
     if 'student_id' not in session:
         session['student_id'] = str(uuid.uuid4())
         session['student_name'] = f"Student_{random.randint(1000, 9999)}"
+        session['progress'] = {}  # Store progress for each hunt
     
     active_hunts = Hunt.query.filter_by(is_active=True).all()
     return render_template('student_dashboard.html',
                          student_name=session.get('student_name'),
                          active_hunts=active_hunts)
+
+@app.route("/student/start-hunt/<int:hunt_id>")
+def start_hunt(hunt_id):
+    if 'student_id' not in session:
+        session['student_id'] = str(uuid.uuid4())
+        session['student_name'] = f"Student_{random.randint(1000, 9999)}"
+        session['progress'] = {}
+    
+    hunt = Hunt.query.filter_by(id=hunt_id, is_active=True).first()
+    if not hunt:
+        flash('Hunt not found or not active', 'danger')
+        return redirect(url_for('student_dashboard'))
+    
+    # Initialize progress for this hunt
+    if str(hunt_id) not in session['progress']:
+        session['progress'][str(hunt_id)] = {
+            'current_question': 1,
+            'score': 0,
+            'completed_questions': [],
+            'started_at': datetime.utcnow().isoformat()
+        }
+    
+    # Get first question
+    first_question = Question.query.filter_by(hunt_id=hunt_id, question_order=1).first()
+    if not first_question:
+        flash('This hunt has no questions yet', 'warning')
+        return redirect(url_for('student_dashboard'))
+    
+    return redirect(url_for('student_question', qr_token=first_question.qr_token))
 
 @app.route("/student/question/<qr_token>")
 def student_question(qr_token):
@@ -203,27 +313,61 @@ def student_question(qr_token):
     
     hunt = Hunt.query.get(question.hunt_id)
     
+    if not hunt.is_active:
+        return render_template('error.html',
+                             message='Hunt not active',
+                             details='This hunt is currently not active.')
+    
     if 'student_id' not in session:
         session['student_id'] = str(uuid.uuid4())
         session['student_name'] = f"Student_{random.randint(1000, 9999)}"
+        session['progress'] = {}
+    
+    # Get next question info
+    next_question = Question.query.filter_by(
+        hunt_id=question.hunt_id, 
+        question_order=question.question_order + 1
+    ).first()
     
     return render_template('student_question.html',
                          question=question,
                          hunt=hunt,
-                         choices=json.loads(question.choices) if question.choices else [])
+                         choices=json.loads(question.choices) if question.choices else [],
+                         next_question=next_question)
 
 @app.route("/api/student/submit-answer", methods=['POST'])
 def submit_answer():
     data = request.json
     qr_token = data.get('qr_token')
     answer = data.get('answer')
+    student_name = data.get('student_name', '')
     
     if not qr_token or answer is None:
         return jsonify({'error': 'Missing required fields'}), 400
     
+    # Update student name if provided
+    if student_name and 'student_name' in session:
+        session['student_name'] = student_name
+    
     question = Question.query.filter_by(qr_token=qr_token).first()
     if not question:
         return jsonify({'error': 'Question not found'}), 404
+    
+    hunt = Hunt.query.get(question.hunt_id)
+    
+    # Initialize student progress
+    hunt_id_str = str(question.hunt_id)
+    if 'progress' not in session:
+        session['progress'] = {}
+    if hunt_id_str not in session['progress']:
+        session['progress'][hunt_id_str] = {
+            'current_question': question.question_order,
+            'score': 0,
+            'completed_questions': [],
+            'started_at': datetime.utcnow().isoformat()
+        }
+    
+    progress = session['progress'][hunt_id_str]
     
     # Check answer
     is_correct = False
@@ -232,49 +376,64 @@ def submit_answer():
     elif question.question_type == 'text':
         is_correct = answer.lower().strip() == question.correct_answer.lower().strip()
     
+    # Update progress
+    if qr_token not in progress['completed_questions']:
+        progress['completed_questions'].append(qr_token)
+        if is_correct:
+            progress['score'] += question.points
+            progress['current_question'] = question.question_order + 1
+    
+    session.modified = True
+    
     # Get next question
-    next_question = Question.query.filter(
-        Question.hunt_id == question.hunt_id,
-        Question.id > question.id
-    ).order_by(Question.id).first()
+    next_question = Question.query.filter_by(
+        hunt_id=question.hunt_id, 
+        question_order=question.question_order + 1
+    ).first()
     
     response = {
         'success': True,
         'correct': is_correct,
         'points_earned': question.points if is_correct else 0,
-        'clue': question.clue if is_correct else None,
+        'total_score': progress['score'],
+        'hint': question.hint if is_correct else None,
+        'next_location_hint': next_question.next_location_hint if next_question and is_correct else None,
         'next_qr_token': next_question.qr_token if next_question else None,
-        'has_next': next_question is not None
+        'has_next': next_question is not None,
+        'is_last_question': next_question is None,
+        'completion_message': "🎉 Congratulations! You've completed the entire hunt!" if not next_question and is_correct else None
     }
     
     return jsonify(response)
 
-# Simple QR display (no image generation)
-@app.route("/qr/<qr_token>")
-def show_qr(qr_token):
+@app.route("/student/progress/<int:hunt_id>")
+def student_progress(hunt_id):
+    if 'student_id' not in session:
+        return redirect(url_for('student_dashboard'))
+    
+    hunt = Hunt.query.get_or_404(hunt_id)
+    progress = session.get('progress', {}).get(str(hunt_id), {})
+    
+    return render_template('student_progress.html',
+                         hunt=hunt,
+                         progress=progress,
+                         total_questions=len(hunt.questions))
+
+# QR Display Page
+@app.route("/qr/display/<qr_token>")
+def display_qr(qr_token):
     question = Question.query.filter_by(qr_token=qr_token).first()
     if not question:
         return "Invalid QR code", 404
     
     qr_url = get_qr_url(qr_token)
+    hunt = Hunt.query.get(question.hunt_id)
     
-    # Return simple HTML with QR URL
-    return f"""
-    <html>
-    <head><title>QR Code for Question</title></head>
-    <body style="font-family: Arial; text-align: center; padding: 50px;">
-        <h1>Scavenger Hunt Question</h1>
-        <h3>{question.text[:100]}...</h3>
-        <p><strong>QR Code URL:</strong></p>
-        <div style="background: #f0f0f0; padding: 20px; margin: 20px; border-radius: 10px;">
-            <code style="font-size: 18px;">{qr_url}</code>
-        </div>
-        <p>Copy this URL and use any QR code generator app to create a QR code.</p>
-        <p>Or scan this page directly if your device supports it.</p>
-        <a href="{qr_url}">Click here to go directly to the question</a>
-    </body>
-    </html>
-    """
+    return render_template('display_qr.html',
+                         question=question,
+                         hunt=hunt,
+                         qr_url=qr_url,
+                         qr_text=generate_qr_text(qr_token))
 
 # Logout
 @app.route("/logout")
