@@ -146,9 +146,18 @@ def create_hunt_with_questions():
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
     
     try:
+        # DEBUG: Print all form data
+        print("=== DEBUG: FORM DATA ===")
+        for key, value in request.form.items():
+            print(f"{key}: {value}")
+        print("========================")
+        
         # Get the data from the form
         hunt_name = request.form.get('huntName', '').strip()
         questions_data = request.form.get('questions', '[]')
+        
+        print(f"DEBUG: hunt_name = '{hunt_name}'")
+        print(f"DEBUG: questions_data (first 500 chars) = '{questions_data[:500]}'")
         
         if not hunt_name:
             return jsonify({'success': False, 'error': 'Hunt name is required'}), 400
@@ -156,7 +165,9 @@ def create_hunt_with_questions():
         # Parse questions data
         try:
             questions = json.loads(questions_data)
-        except json.JSONDecodeError:
+            print(f"DEBUG: Parsed {len(questions)} questions")
+        except json.JSONDecodeError as e:
+            print(f"DEBUG: JSON Parse Error: {e}")
             return jsonify({'success': False, 'error': 'Invalid questions format'}), 400
         
         # Create the hunt
@@ -170,7 +181,10 @@ def create_hunt_with_questions():
         db.session.add(hunt)
         db.session.commit()
         
+        print(f"DEBUG: Created hunt with ID {hunt.id}")
+        
         # Add questions to the hunt
+        question_count = 0
         for i, q_data in enumerate(questions, 1):
             question_type = q_data.get('type', 'text')
             text = q_data.get('text', '').strip()
@@ -180,7 +194,10 @@ def create_hunt_with_questions():
             points = int(q_data.get('points', 10))
             
             if not text or not correct_answer:
+                print(f"DEBUG: Skipping question {i} - missing text or answer")
                 continue  # Skip invalid questions
+            
+            print(f"DEBUG: Adding question {i}: {text[:50]}...")
             
             # Process choices for multiple-choice
             choices = []
@@ -203,8 +220,11 @@ def create_hunt_with_questions():
                 points=points
             )
             db.session.add(question)
+            question_count += 1
         
         db.session.commit()
+        
+        print(f"DEBUG: Successfully created hunt with {question_count} questions")
         
         return jsonify({
             'success': True,
@@ -215,6 +235,9 @@ def create_hunt_with_questions():
         
     except Exception as e:
         db.session.rollback()
+        print(f"DEBUG: ERROR: {str(e)}")
+        import traceback
+        print(f"DEBUG: TRACEBACK: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': str(e)
