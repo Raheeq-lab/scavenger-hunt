@@ -3,16 +3,507 @@
 <head>
     <title>Error - Scavenger Hunt</title>
     <style>
-        body { font-family: Arial; text-align: center; padding: 50px; background: #f5f7fa; }
-        .error-box { background: white; padding: 40px; border-radius: 15px; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.1); border-left: 5px solid #ff4444; }
-        .btn { display: inline-block; padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .error-container {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            border-top: 8px solid #ff4444;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .error-icon {
+            font-size: 5em;
+            margin-bottom: 30px;
+            color: #ff4444;
+            animation: bounce 1s infinite alternate;
+        }
+        
+        .error-title {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .error-message {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+            padding: 0 20px;
+        }
+        
+        .error-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: left;
+            border-left: 4px solid #ff4444;
+        }
+        
+        .error-details-title {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .error-details-text {
+            color: #666;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            word-break: break-word;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+            min-width: 180px;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            transform: translateY(-3px);
+        }
+        
+        .btn-report {
+            background: linear-gradient(135deg, #2196F3 0%, #0D47A1 100%);
+            color: white;
+        }
+        
+        .btn-report:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(33, 150, 243, 0.3);
+        }
+        
+        .error-code {
+            background: #333;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .technical-info {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: left;
+        }
+        
+        .technical-toggle {
+            background: #f8f9fa;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+        }
+        
+        .technical-content {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            text-align: left;
+            display: none;
+            overflow-x: auto;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        
+        .help-section {
+            background: #e8f5e8;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+            text-align: left;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .help-title {
+            font-size: 1.2em;
+            color: #2E7D32;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .help-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .help-list li {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .help-list li:before {
+            content: "•";
+            color: #4CAF50;
+            font-weight: bold;
+            position: absolute;
+            left: 10px;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            color: #999;
+            font-size: 0.9em;
+        }
+        
+        /* Different error types */
+        .error-type-404 .error-icon {
+            color: #FF9800;
+        }
+        
+        .error-type-404 .error-container {
+            border-color: #FF9800;
+        }
+        
+        .error-type-500 .error-icon {
+            color: #ff4444;
+        }
+        
+        .error-type-500 .error-container {
+            border-color: #ff4444;
+        }
+        
+        .error-type-access .error-icon {
+            color: #9C27B0;
+        }
+        
+        .error-type-access .error-container {
+            border-color: #9C27B0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .error-container {
+                padding: 30px 20px;
+            }
+            
+            .error-icon {
+                font-size: 4em;
+            }
+            
+            .error-title {
+                font-size: 2em;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
-<body>
-    <div class="error-box">
-        <h1 style="color: #ff4444;">⚠️ Error</h1>
-        <p style="font-size: 1.2em; margin: 20px 0;">{{ message }}</p>
-        <a href="/" class="btn">Go Home</a>
+<body class="error-type-{% if message == 'Page Not Found' %}404{% elif message == 'Internal Server Error' %}500{% elif message == 'Access denied' %}access{% else %}500{% endif %}">
+    <div class="error-container">
+        <div class="error-icon">
+            {% if message == 'Page Not Found' %}
+            🔍
+            {% elif message == 'Internal Server Error' %}
+            ⚠️
+            {% elif message == 'Access denied' %}
+            🔒
+            {% elif message == 'Hunt not active' %}
+            ⏸️
+            {% elif message == 'Invalid QR code' %}
+            📱
+            {% else %}
+            ❌
+            {% endif %}
+        </div>
+        
+        <h1 class="error-title">{{ message }}</h1>
+        
+        <div class="error-message">
+            {% if message == 'Page Not Found' %}
+            The page you're looking for doesn't exist or has been moved.
+            {% elif message == 'Internal Server Error' %}
+            Something went wrong on our end. We're working to fix it.
+            {% elif message == 'Access denied' %}
+            You don't have permission to access this page.
+            {% elif message == 'Hunt not active' %}
+            This scavenger hunt is currently not active.
+            {% elif message == 'Invalid QR code' %}
+            This QR code doesn't match any question in our system.
+            {% elif details %}
+            {{ details }}
+            {% else %}
+            An unexpected error occurred. Please try again.
+            {% endif %}
+        </div>
+        
+        {% if details %}
+        <div class="error-details">
+            <div class="error-details-title">
+                <span>📋</span>
+                Details
+            </div>
+            <div class="error-details-text">{{ details }}</div>
+        </div>
+        {% endif %}
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            {% if message == 'Page Not Found' or message == 'Invalid QR code' %}
+            <a href="/" class="btn btn-primary">
+                <span>🏠</span>
+                Go Home
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <span>↩️</span>
+                Go Back
+            </a>
+            {% elif message == 'Access denied' %}
+            <a href="/teacher/login" class="btn btn-primary">
+                <span>👨‍🏫</span>
+                Teacher Login
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <span>🏠</span>
+                Home Page
+            </a>
+            {% elif message == 'Hunt not active' %}
+            <a href="/student/dashboard" class="btn btn-primary">
+                <span>👨‍🎓</span>
+                Student Dashboard
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <span>🏠</span>
+                Home Page
+            </a>
+            {% else %}
+            <a href="/" class="btn btn-primary">
+                <span>🏠</span>
+                Go Home
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <span>↩️</span>
+                Go Back
+            </a>
+            <a href="/contact" class="btn btn-report">
+                <span>📧</span>
+                Report Issue
+            </a>
+            {% endif %}
+        </div>
+        
+        <!-- Help Section -->
+        <div class="help-section">
+            <h3 class="help-title">
+                <span>💡</span>
+                What you can do:
+            </h3>
+            <ul class="help-list">
+                {% if message == 'Page Not Found' %}
+                <li>Check if the URL is spelled correctly</li>
+                <li>Use the navigation menu to find what you need</li>
+                <li>Contact support if you believe this is an error</li>
+                {% elif message == 'Internal Server Error' %}
+                <li>Refresh the page and try again</li>
+                <li>Clear your browser cache and cookies</li>
+                <li>Try again in a few minutes</li>
+                <li>Contact technical support if the issue persists</li>
+                {% elif message == 'Access denied' %}
+                <li>Make sure you're logged in with the correct account</li>
+                <li>Contact the hunt creator for access</li>
+                <li>Check if you have the proper permissions</li>
+                {% elif message == 'Hunt not active' %}
+                <li>Try another scavenger hunt</li>
+                <li>Contact the teacher to activate the hunt</li>
+                <li>Check back later when the hunt is active</li>
+                {% elif message == 'Invalid QR code' %}
+                <li>Make sure you scanned the correct QR code</li>
+                <li>Check if the QR code is damaged or obscured</li>
+                <li>Contact your teacher for a new QR code</li>
+                {% else %}
+                <li>Refresh the page and try again</li>
+                <li>Go back to the previous page</li>
+                <li>Contact support if the error continues</li>
+                {% endif %}
+            </ul>
+        </div>
+        
+        <!-- Technical Info (Hidden by default) -->
+        <div class="technical-info">
+            <button class="technical-toggle" onclick="toggleTechnicalInfo()">
+                <span id="techIcon">🔧</span>
+                Show Technical Details
+            </button>
+            <div class="technical-content" id="technicalContent">
+                <div><strong>Error Type:</strong> {{ message }}</div>
+                {% if details %}
+                <div style="margin-top: 10px;"><strong>Details:</strong> {{ details }}</div>
+                {% endif %}
+                <div style="margin-top: 10px;"><strong>URL:</strong> <span id="currentURL"></span></div>
+                <div style="margin-top: 10px;"><strong>Timestamp:</strong> <span id="timestamp"></span></div>
+                <div style="margin-top: 10px;"><strong>User Agent:</strong> <span id="userAgent"></span></div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2024 Scavenger Hunt Educational Platform</p>
+            <p style="font-size: 0.8em; margin-top: 5px;">Error Reference: <span class="error-code">ERR-{{ message|replace(' ', '-')|upper }}</span></p>
+        </div>
     </div>
+    
+    <script>
+        // Set current URL and timestamp
+        document.getElementById('currentURL').textContent = window.location.href;
+        document.getElementById('timestamp').textContent = new Date().toLocaleString();
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        
+        function toggleTechnicalInfo() {
+            const content = document.getElementById('technicalContent');
+            const button = document.querySelector('.technical-toggle');
+            const icon = document.getElementById('techIcon');
+            
+            if (content.style.display === 'block') {
+                content.style.display = 'none';
+                button.innerHTML = '<span id="techIcon">🔧</span> Show Technical Details';
+            } else {
+                content.style.display = 'block';
+                button.innerHTML = '<span id="techIcon">🔧</span> Hide Technical Details';
+                // Scroll to technical info
+                content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+        
+        // Auto-hide technical info on small screens
+        if (window.innerWidth < 768) {
+            document.getElementById('technicalContent').style.display = 'none';
+        }
+        
+        // Log error to console for debugging
+        console.error('Page Error:', {
+            message: '{{ message }}',
+            details: '{{ details }}',
+            url: window.location.href,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Try to reload on certain errors after delay
+        if ('{{ message }}' === 'Internal Server Error') {
+            setTimeout(() => {
+                console.log('Attempting auto-recovery...');
+                // Optionally auto-reload after 10 seconds
+                // window.location.reload();
+            }, 10000);
+        }
+        
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Escape to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+            // Home key to go home
+            if (e.key === 'Home') {
+                window.location.href = '/';
+            }
+            // F5 to reload
+            if (e.key === 'F5') {
+                e.preventDefault();
+                window.location.reload();
+            }
+        });
+        
+        // Add helpful console message
+        console.log(
+            '%c🚨 Error Page Loaded %c\n' +
+            'If you\'re seeing this error repeatedly, please:\n' +
+            '1. Clear your browser cache\n' +
+            '2. Try a different browser\n' +
+            '3. Contact support with the technical details above',
+            'color: #ff4444; font-weight: bold; font-size: 14px;',
+            'color: #666;'
+        );
+    </script>
 </body>
 </html>
