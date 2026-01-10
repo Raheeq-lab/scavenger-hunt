@@ -45,12 +45,6 @@
             margin-bottom: 25px;
             line-height: 1.6;
         }
-        .question-image {
-            max-width: 100%;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            border: 3px solid #f0f0f0;
-        }
         
         /* Multiple Choice Styles */
         .choices-container {
@@ -86,26 +80,6 @@
         .text-answer:focus {
             outline: none;
             border-color: #4CAF50;
-        }
-        
-        /* Image Upload Styles */
-        .image-upload-area {
-            border: 3px dashed #4CAF50;
-            padding: 40px;
-            text-align: center;
-            border-radius: 15px;
-            background: #f8fff8;
-            margin: 20px 0;
-            cursor: pointer;
-        }
-        .upload-icon {
-            font-size: 3em;
-            color: #4CAF50;
-            margin-bottom: 15px;
-        }
-        .upload-text {
-            color: #666;
-            font-size: 1.1em;
         }
         
         /* Buttons */
@@ -176,6 +150,18 @@
             border-radius: 10px;
             display: none;
         }
+        .next-btn {
+            background: linear-gradient(135deg, #2196F3 0%, #0D47A1 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -185,7 +171,7 @@
             <div class="hunt-name">
                 <span>🎯</span> {{ hunt.name }}
             </div>
-            <div style="color: #666;">Scan QR code to access question</div>
+            <div style="color: #666;">Question {{ question.question_order }}</div>
         </div>
         
         <!-- Question Content -->
@@ -194,14 +180,10 @@
                 {{ question.text }}
             </div>
             
-            {% if question.type == 'image' and question.image %}
-            <img src="/uploads/{{ question.image }}" alt="Question Image" class="question-image">
-            {% endif %}
-            
             <!-- Multiple Choice -->
-            {% if question.type == 'multiple-choice' %}
+            {% if question.question_type == 'multiple-choice' %}
             <div class="choices-container">
-                {% for choice in question.choices %}
+                {% for choice in choices %}
                 <div class="choice-option" data-choice="{{ choice }}">
                     {{ choice }}
                 </div>
@@ -210,18 +192,8 @@
             {% endif %}
             
             <!-- Text Answer -->
-            {% if question.type == 'text' %}
+            {% if question.question_type == 'text' %}
             <input type="text" class="text-answer" id="textAnswer" placeholder="Type your answer here...">
-            {% endif %}
-            
-            <!-- Image Upload -->
-            {% if question.type == 'image' %}
-            <div class="image-upload-area" onclick="document.getElementById('imageUpload').click()">
-                <div class="upload-icon">📷</div>
-                <div class="upload-text">Take a photo or upload an image</div>
-                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
-                <div id="fileName" style="color: #666; margin-top: 10px;"></div>
-            </div>
             {% endif %}
         </div>
         
@@ -232,30 +204,26 @@
         
         <!-- Result Messages -->
         <div class="result-message" id="resultMessage"></div>
+        
         <div class="clue" id="clueMessage">
-            <strong>🎉 Correct! Next Clue:</strong>
             <div id="clueText"></div>
-            <div style="margin-top: 15px;">
-                <button id="nextBtn" class="submit-btn" style="background: #2196F3;">Continue to Next Location</button>
-            </div>
+            <button class="next-btn" id="nextBtn">Continue to Next Location</button>
         </div>
         
         <!-- Submit Button -->
         <button class="submit-btn" id="submitBtn">
-            {% if question.type == 'image' %}📸 Submit Photo
-            {% else %}✅ Submit Answer{% endif %}
+            ✅ Submit Answer
         </button>
     </div>
     
     <script>
-        console.log("=== DEBUG: Page loaded ===");
-        console.log("questionType:", '{{ question.type }}');
-        console.log("qrToken:", '{{ question.qr_token }}');
-        
-        const questionType = '{{ question.type }}';
+        const questionType = '{{ question.question_type }}';
         const qrToken = '{{ question.qr_token }}';
         let selectedChoice = null;
-        let uploadedFile = null;
+        
+        console.log("Question type:", questionType);
+        console.log("QR Token:", qrToken);
+        console.log("Choices:", {{ choices|tojson }});
         
         // Initialize based on question type
         if (questionType === 'multiple-choice') {
@@ -269,17 +237,6 @@
                     this.classList.add('selected');
                     selectedChoice = this.dataset.choice;
                 });
-            });
-        }
-        
-        // Image upload handling
-        if (questionType === 'image') {
-            document.getElementById('imageUpload').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    document.getElementById('fileName').textContent = `Selected: ${file.name}`;
-                    uploadedFile = file;
-                }
             });
         }
         
@@ -307,17 +264,10 @@
                 }
                 console.log("Text answer:", answer);
             }
-            else if (questionType === 'image') {
-                if (!uploadedFile) {
-                    alert('Please upload an image');
-                    return;
-                }
-                answer = 'image_uploaded';
-                console.log("Image uploaded");
-            }
             
             // Disable button and show loading
             const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerHTML;
             btn.innerHTML = 'Checking...';
             btn.disabled = true;
             
@@ -334,18 +284,23 @@
                     answer: answer
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 console.log("=== DEBUG RESPONSE ===");
                 console.log("Full response:", data);
                 console.log("Is correct?", data.correct);
-                console.log("Clue value:", data.clue);
-                console.log("Next question:", data.next_question);
+                console.log("Next location hint:", data.next_location_hint);
+                console.log("Next QR token:", data.next_qr_token);
                 console.log("=== END DEBUG ===");
                 
                 if (data.error) {
                     alert('Error: ' + data.error);
-                    btn.innerHTML = questionType === 'image' ? '📸 Submit Photo' : '✅ Submit Answer';
+                    btn.innerHTML = originalText;
                     btn.disabled = false;
                     return;
                 }
@@ -355,6 +310,7 @@
                 const clueDiv = document.getElementById('clueMessage');
                 const clueText = document.getElementById('clueText');
                 const progressFill = document.getElementById('progressFill');
+                const nextBtn = document.getElementById('nextBtn');
                 
                 if (data.correct) {
                     resultDiv.textContent = '✅ Correct! +' + (data.points_earned || 10) + ' points';
@@ -364,31 +320,44 @@
                     progressFill.style.width = '100%';
                     
                     // Show clue if available
-                    if (data.clue !== undefined && data.clue !== null && data.clue !== '') {
-                        console.log("Displaying clue:", data.clue);
-                        clueText.textContent = data.clue;
+                    if (data.next_location_hint) {
+                        console.log("Displaying clue:", data.next_location_hint);
+                        clueText.innerHTML = `<strong>🎉 Correct! Next Clue:</strong><br>${data.next_location_hint}`;
                         clueDiv.style.display = 'block';
                         
-                        // Setup next button if available
-                        if (data.next_question && data.next_question.has_next) {
-                            document.getElementById('nextBtn').onclick = function() {
-                                if (data.next_question.qr_token) {
-                                    window.location.href = `/student/question/${data.next_question.qr_token}`;
-                                }
+                        // Setup next button
+                        if (data.next_qr_token) {
+                            nextBtn.textContent = 'Continue to Next Location';
+                            nextBtn.onclick = function() {
+                                window.location.href = `/student/question/${data.next_qr_token}`;
                             };
                         } else {
-                            document.getElementById('nextBtn').textContent = '🏁 Hunt Complete!';
-                            document.getElementById('nextBtn').onclick = function() {
+                            nextBtn.textContent = '🏁 Hunt Complete!';
+                            nextBtn.onclick = function() {
                                 window.location.href = '/student/dashboard';
                             };
                         }
                     } else {
-                        console.log("No clue to display (empty or missing)");
+                        // If no clue but correct, just show success
+                        clueText.innerHTML = '<strong>🎉 Correct!</strong> Proceed to the next location.';
+                        clueDiv.style.display = 'block';
+                        
+                        if (data.next_qr_token) {
+                            nextBtn.textContent = 'Continue';
+                            nextBtn.onclick = function() {
+                                window.location.href = `/student/question/${data.next_qr_token}`;
+                            };
+                        } else {
+                            nextBtn.textContent = 'Finish Hunt';
+                            nextBtn.onclick = function() {
+                                window.location.href = '/student/dashboard';
+                            };
+                        }
                     }
                 } else {
                     resultDiv.textContent = '❌ Incorrect. Try again!';
                     resultDiv.className = 'result-message incorrect';
-                    btn.innerHTML = questionType === 'image' ? '📸 Submit Photo' : '✅ Submit Answer';
+                    btn.innerHTML = originalText;
                     btn.disabled = false;
                 }
                 
@@ -397,7 +366,7 @@
             .catch(error => {
                 console.error("Fetch error:", error);
                 alert('Network error. Please try again.');
-                btn.innerHTML = questionType === 'image' ? '📸 Submit Photo' : '✅ Submit Answer';
+                btn.innerHTML = originalText;
                 btn.disabled = false;
             });
         }
@@ -407,7 +376,14 @@
             document.getElementById('textAnswer').focus();
         }
         
-        console.log("=== DEBUG: JavaScript setup complete ===");
+        // Add Enter key support for text answers
+        if (questionType === 'text') {
+            document.getElementById('textAnswer').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitAnswer();
+                }
+            });
+        }
     </script>
 </body>
 </html>
