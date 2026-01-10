@@ -199,23 +199,35 @@
             color: #2196F3;
         }
         
+        .btn-edit:hover {
+            background: #bbdefb;
+        }
+        
         .btn-view {
             background: #f3e5f5;
             color: #9C27B0;
         }
         
-        .btn-qr {
-            background: #fff3e0;
-            color: #FF9800;
+        .btn-view:hover {
+            background: #e1bee7;
+        }
+        
+        .btn-primary {
+            background: #c8e6c9;
+            color: #2E7D32;
+        }
+        
+        .btn-primary:hover {
+            background: #a5d6a7;
         }
         
         .btn-delete {
-            background: #ffebee;
-            color: #ff4444;
+            background: #ffcdd2;
+            color: #c62828;
         }
         
         .btn-delete:hover {
-            background: #ffcdd2;
+            background: #ef9a9a;
         }
         
         .empty-state {
@@ -382,13 +394,19 @@
             </div>
             <div class="stat-card">
                 <div class="icon">📱</div>
-                <div class="number">0</div>
-                <div class="label">Active Students</div>
+                <div class="number">
+                    {% set active_hunts = [] %}
+                    {% for hunt in hunts %}
+                        {% if hunt.is_active %}{% if active_hunts.append(1) %}{% endif %}{% endif %}
+                    {% endfor %}
+                    {{ active_hunts|sum }}
+                </div>
+                <div class="label">Active Hunts</div>
             </div>
             <div class="stat-card">
                 <div class="icon">✅</div>
                 <div class="number">0</div>
-                <div class="label">Completed</div>
+                <div class="label">Students Active</div>
             </div>
         </div>
         
@@ -424,9 +442,12 @@
                     </div>
                     
                     <div class="card-actions">
-                        <a href="/teacher/hunt/{{ hunt._id }}/edit" class="action-btn btn-edit">✏️ Edit</a>
-                        <a href="#" class="action-btn btn-view" onclick="viewHunt('{{ hunt._id }}')">👁️ View</a>
-                        <button class="action-btn btn-delete" onclick="deleteHunt('{{ hunt._id }}', '{{ hunt.name }}')">🗑️ Delete</button>
+                        <a href="/teacher/hunt/{{ hunt.id }}/add-question" class="action-btn btn-edit">✏️ Add Question</a>
+                        <a href="/teacher/hunt/{{ hunt.id }}/view" class="action-btn btn-view">👁️ View</a>
+                        <button class="action-btn {% if hunt.is_active %}btn-delete{% else %}btn-primary{% endif %}" 
+                                onclick="toggleHuntActive({{ hunt.id }}, '{{ hunt.name }}', this)">
+                            {% if hunt.is_active %}⏸️ Deactivate{% else %}▶️ Activate{% endif %}
+                        </button>
                     </div>
                 </div>
                 {% endfor %}
@@ -463,18 +484,18 @@
         }
     });
     
-    // Delete hunt function
-    function deleteHunt(huntId, huntName) {
-        if (confirm(`Are you sure you want to delete "${huntName}"?\n\nThis will delete all questions and QR codes permanently.`)) {
-            // Show loading
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Deleting...';
-            btn.disabled = true;
+    // Toggle hunt active/inactive
+    function toggleHuntActive(huntId, huntName, button) {
+        const isActive = button.textContent.includes('Deactivate');
+        const action = isActive ? 'deactivate' : 'activate';
+        
+        if (confirm(`Are you sure you want to ${action} "${huntName}"?`)) {
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Updating...';
+            button.disabled = true;
             
-            // Send delete request
-            fetch(`/teacher/hunt/${huntId}/delete`, {
-                method: 'DELETE',
+            fetch(`/teacher/hunt/${huntId}/toggle-active`, {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 }
@@ -482,41 +503,42 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Remove card from UI
-                    const card = btn.closest('.card');
-                    card.style.opacity = '0.5';
-                    card.style.transform = 'scale(0.95)';
+                    // Update button text and class
+                    if (data.is_active) {
+                        button.innerHTML = '⏸️ Deactivate';
+                        button.className = 'action-btn btn-delete';
+                    } else {
+                        button.innerHTML = '▶️ Activate';
+                        button.className = 'action-btn btn-primary';
+                    }
                     
-                    setTimeout(() => {
-                        card.remove();
-                        
-                        // Update stats
-                        updateStatsAfterDelete();
-                        
-                        // If no hunts left, show empty state
-                        const cards = document.querySelectorAll('.card');
-                        if (cards.length === 0) {
-                            location.reload(); // Reload to show empty state
-                        }
-                    }, 300);
+                    // Update status badge in the card
+                    const statusBadge = button.closest('.card').querySelector('.hunt-status');
+                    if (data.is_active) {
+                        statusBadge.textContent = 'Active';
+                        statusBadge.className = 'hunt-status status-active';
+                    } else {
+                        statusBadge.textContent = 'Inactive';
+                        statusBadge.className = 'hunt-status status-inactive';
+                    }
                     
                     // Show success message
-                    showFlashMessage('Hunt deleted successfully!', 'success');
+                    showFlashMessage(`Hunt ${data.is_active ? 'activated' : 'deactivated'} successfully!`, 'success');
                 } else {
-                    alert('Error: ' + (data.error || 'Failed to delete hunt'));
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
+                    alert('Error: ' + (data.error || 'Failed to update hunt'));
+                    button.innerHTML = originalText;
                 }
+                button.disabled = false;
             })
             .catch(error => {
                 alert('Network error. Please try again.');
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                button.innerHTML = originalText;
+                button.disabled = false;
             });
         }
     }
     
-    // View hunt function - CHANGE THIS LINE
+    // View hunt function
     function viewHunt(huntId) {
         window.open(`/teacher/hunt/${huntId}/view`, '_blank');
     }
@@ -558,3 +580,5 @@
         }
     }
 </script>
+</body>
+</html>
