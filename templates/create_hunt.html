@@ -420,7 +420,7 @@
             }
         }
         
-        // Save Hunt
+        // Save Hunt - UPDATED VERSION
         document.getElementById('saveHuntBtn').addEventListener('click', function() {
             const huntName = document.getElementById('huntName').value.trim();
             const huntDescription = document.getElementById('huntDescription').value.trim();
@@ -435,28 +435,33 @@
                 return;
             }
             
-            // Create FormData
-            const formData = new FormData();
-            formData.append('hunt_name', huntName);
-            formData.append('hunt_description', huntDescription);
-            formData.append('questions', JSON.stringify(questions));
-            
-            // Add image files
-            questions.forEach((q, index) => {
-                if (q.imageFile) {
-                    formData.append(`image_${index}`, q.imageFile);
-                }
-            });
+            // Prepare data as JSON (not FormData)
+            const data = {
+                huntName: huntName,
+                huntDescription: huntDescription,
+                questions: questions.map(q => ({
+                    type: q.type,
+                    text: q.text,
+                    answer: q.correctAnswer,  // Note: using 'answer' not 'correctAnswer'
+                    hint: '',  // Your form doesn't have hint
+                    nextLocationHint: q.clue,  // Using clue as nextLocationHint
+                    points: q.points,
+                    choices: q.choices || []
+                }))
+            };
             
             // Save button loading state
             const saveBtn = this;
             saveBtn.innerHTML = 'Saving...';
             saveBtn.disabled = true;
             
-            // Send to server
+            // Send to server as JSON
             fetch('/teacher/create-hunt-with-questions', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(data => {
