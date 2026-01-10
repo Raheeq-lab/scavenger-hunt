@@ -139,73 +139,78 @@ def teacher_dashboard():
                          teacher_name=session.get('teacher_name'),
                          hunts=hunts)
 
-# NEW ROUTE: This is what your frontend is trying to call
+@app.route("/teacher/create-hunt", methods=['GET', 'POST'])
+def create_hunt():
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return redirect(url_for('teacher_login'))
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        description = request.form.get('description', '')
+        teacher_id = session['user_id']
+        
+        hunt = Hunt(name=name, description=description, teacher_id=teacher_id)
+        db.session.add(hunt)
+        db.session.commit()
+        
+        flash('Hunt created successfully! Now add questions.', 'success')
+        return redirect(url_for('add_question', hunt_id=hunt.id))
+    
+    return render_template('create_hunt.html')
+
+# ADDED ROUTE: This is what the frontend JavaScript is trying to call
 @app.route("/teacher/create-hunt-with-questions", methods=['POST'])
 def create_hunt_with_questions():
+    """Handle the new create hunt flow from JavaScript"""
     if 'user_type' not in session or session['user_type'] != 'teacher':
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
     
     try:
-        # DEBUG: Print all form data
-        print("=== DEBUG: FORM DATA ===")
-        for key, value in request.form.items():
-            print(f"{key}: {value}")
-        print("========================")
+        # Get data from the AJAX request
+        data = request.get_json()
         
-        # Get the data from the form
-        hunt_name = request.form.get('huntName', '').strip()
-        questions_data = request.form.get('questions', '[]')
-        
-        print(f"DEBUG: hunt_name = '{hunt_name}'")
-        print(f"DEBUG: questions_data (first 500 chars) = '{questions_data[:500]}'")
+        if not data:
+            # Fallback to form data if JSON is not available
+            hunt_name = request.form.get('huntName', '').strip()
+            questions_data = request.form.get('questions', '[]')
+        else:
+            hunt_name = data.get('huntName', '').strip()
+            questions_data = json.dumps(data.get('questions', []))
         
         if not hunt_name:
             return jsonify({'success': False, 'error': 'Hunt name is required'}), 400
-        
-        # Parse questions data
-        try:
-            questions = json.loads(questions_data)
-            print(f"DEBUG: Parsed {len(questions)} questions")
-        except json.JSONDecodeError as e:
-            print(f"DEBUG: JSON Parse Error: {e}")
-            return jsonify({'success': False, 'error': 'Invalid questions format'}), 400
         
         # Create the hunt
         teacher_id = session['user_id']
         hunt = Hunt(
             name=hunt_name,
             teacher_id=teacher_id,
-            description=f"Scavenger hunt created on {datetime.now().strftime('%Y-%m-%d')}",
+            description="",
             is_active=False
         )
         db.session.add(hunt)
         db.session.commit()
         
-        print(f"DEBUG: Created hunt with ID {hunt.id}")
+        # Parse and add questions
+        questions = json.loads(questions_data)
         
-        # Add questions to the hunt
-        question_count = 0
         for i, q_data in enumerate(questions, 1):
-            question_type = q_data.get('type', 'text')
             text = q_data.get('text', '').strip()
             correct_answer = q_data.get('answer', '').strip()
-            hint = q_data.get('hint', '').strip()
-            next_location_hint = q_data.get('nextLocationHint', '').strip()
-            points = int(q_data.get('points', 10))
             
             if not text or not correct_answer:
-                print(f"DEBUG: Skipping question {i} - missing text or answer")
-                continue  # Skip invalid questions
+                continue
             
-            print(f"DEBUG: Adding question {i}: {text[:50]}...")
-            
-            # Process choices for multiple-choice
-            choices = []
-            if question_type == 'multiple-choice':
+            # Determine question type
+            if 'choices' in q_data and len(q_data.get('choices', [])) > 0:
+                question_type = 'multiple-choice'
                 choices = q_data.get('choices', [])
-                # Ensure we have exactly 4 choices
+                # Ensure 4 choices for multiple-choice
                 while len(choices) < 4:
                     choices.append('')
+            else:
+                question_type = 'text'
+                choices = []
             
             question = Question(
                 hunt_id=hunt.id,
@@ -214,17 +219,14 @@ def create_hunt_with_questions():
                 text=text,
                 choices=json.dumps(choices) if choices else '',
                 correct_answer=correct_answer,
-                hint=hint,
-                next_location_hint=next_location_hint,
+                hint=q_data.get('hint', ''),
+                next_location_hint=q_data.get('nextLocationHint', ''),
                 qr_token=str(uuid.uuid4()),
-                points=points
+                points=int(q_data.get('points', 10))
             )
             db.session.add(question)
-            question_count += 1
         
         db.session.commit()
-        
-        print(f"DEBUG: Successfully created hunt with {question_count} questions")
         
         return jsonify({
             'success': True,
@@ -235,21 +237,10 @@ def create_hunt_with_questions():
         
     except Exception as e:
         db.session.rollback()
-        print(f"DEBUG: ERROR: {str(e)}")
-        import traceback
-        print(f"DEBUG: TRACEBACK: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
-
-# Keep the old create-hunt route for backward compatibility
-@app.route("/teacher/create-hunt", methods=['GET'])
-def create_hunt():
-    if 'user_type' not in session or session['user_type'] != 'teacher':
-        return redirect(url_for('teacher_login'))
-    
-    return render_template('create_hunt.html')
 
 @app.route("/teacher/hunt/<int:hunt_id>/add-question", methods=['GET', 'POST'])
 def add_question(hunt_id):
