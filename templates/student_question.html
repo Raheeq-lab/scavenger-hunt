@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scavenger Hunt Question</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .question-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 800px;
+            width: 100%;
+        }
+        .hunt-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border-left: 5px solid #4CAF50;
+        }
+        .hunt-name {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .question-content {
+            margin-bottom: 30px;
+        }
+        .question-text {
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        .question-image {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 3px solid #f0f0f0;
+        }
+        
+        /* Multiple Choice Styles */
+        .choices-container {
+            margin: 25px 0;
+        }
+        .choice-option {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .choice-option:hover {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+        .choice-option.selected {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+        
+        /* Text Answer Styles */
+        .text-answer {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.1em;
+            margin: 20px 0;
+        }
+        .text-answer:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        /* Image Upload Styles */
+        .image-upload-area {
+            border: 3px dashed #4CAF50;
+            padding: 40px;
+            text-align: center;
+            border-radius: 15px;
+            background: #f8fff8;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .upload-icon {
+            font-size: 3em;
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+        .upload-text {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        /* Buttons */
+        .submit-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+        }
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        /* Result Messages */
+        .result-message {
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: none;
+        }
+        .correct {
+            background: #e8f5e9;
+            color: #2E7D32;
+            border: 2px solid #4CAF50;
+        }
+        .incorrect {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #ff4444;
+        }
+        .clue {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 2px solid #2196F3;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <!-- Hunt Header -->
+        <div class="hunt-header">
+            <div class="hunt-name">
+                <span>🎯</span> {{ hunt.name }}
+            </div>
+            <div style="color: #666;">Scan QR code to access question</div>
+        </div>
+        
+        <!-- Question Content -->
+        <div class="question-content">
+            <div class="question-text">
+                {{ question.text }}
+            </div>
+            
+            {% if question.type == 'image' and question.image %}
+            <img src="/uploads/{{ question.image }}" alt="Question Image" class="question-image">
+            {% endif %}
+            
+            <!-- Multiple Choice -->
+            {% if question.type == 'multiple-choice' %}
+            <div class="choices-container">
+                {% for choice in question.choices %}
+                <div class="choice-option" data-choice="{{ choice }}">
+                    {{ choice }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Text Answer -->
+            {% if question.type == 'text' %}
+            <input type="text" class="text-answer" id="textAnswer" placeholder="Type your answer here...">
+            {% endif %}
+            
+            <!-- Image Upload -->
+            {% if question.type == 'image' %}
+            <div class="image-upload-area" onclick="document.getElementById('imageUpload').click()">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Take a photo or upload an image</div>
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                <div id="fileName" style="color: #666; margin-top: 10px;"></div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <!-- Result Messages -->
+        <div class="result-message" id="resultMessage"></div>
+        <div class="clue" id="clueMessage">
+            <strong>🎉 Correct! Next Clue:</strong>
+            <div id="clueText"></div>
+            <div style="margin-top: 15px;">
+                <button id="nextBtn" class="submit-btn" style="background: #2196F3;">Continue to Next Location</button>
+            </div>
+        </div>
+        
+        <!-- Submit Button -->
+        <button class="submit-btn" id="submitBtn">
+            {% if question.type == 'image' %}📸 Submit Photo
+            {% else %}✅ Submit Answer{% endif %}
+        </button>
+    </div>
+    
+    <script>
+        console.log("=== DEBUG: Page loaded ===");
+        console.log("questionType:", '{{ question.type }}');
+        console.log("qrToken:", '{{ question.qr_token }}');
+        
+        const questionType = '{{ question.type }}';
+        const qrToken = '{{ question.qr_token }}';
+        let selectedChoice = null;
+        let uploadedFile = null;
+        
+        // Initialize based on question type
+        if (questionType === 'multiple-choice') {
+            console.log("Setting up multiple-choice options");
+            document.querySelectorAll('.choice-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    console.log("Choice clicked:", this.dataset.choice);
+                    // Remove previous selection
+                    document.querySelectorAll('.choice-option').forEach(o => o.classList.remove('selected'));
+                    // Add selection to this option
+                    this.classList.add('selected');
+                    selectedChoice = this.dataset.choice;
+                });
+            });
+        }
+        
+        // Image upload handling
+        if (questionType === 'image') {
+            document.getElementById('imageUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+                    uploadedFile = file;
+                }
+            });
+        }
+        
+        // Submit answer
+        document.getElementById('submitBtn').addEventListener('click', submitAnswer);
+        
+        function submitAnswer() {
+            console.log("=== submitAnswer() called ===");
+            let answer = '';
+            
+            // Get answer based on question type
+            if (questionType === 'multiple-choice') {
+                if (!selectedChoice) {
+                    alert('Please select an answer');
+                    return;
+                }
+                answer = selectedChoice;
+                console.log("Selected answer:", answer);
+            } 
+            else if (questionType === 'text') {
+                answer = document.getElementById('textAnswer').value.trim();
+                if (!answer) {
+                    alert('Please enter your answer');
+                    return;
+                }
+                console.log("Text answer:", answer);
+            }
+            else if (questionType === 'image') {
+                if (!uploadedFile) {
+                    alert('Please upload an image');
+                    return;
+                }
+                answer = 'image_uploaded';
+                console.log("Image uploaded");
+            }
+            
+            // Disable button and show loading
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = 'Checking...';
+            btn.disabled = true;
+            
+            console.log("Sending to server:", { qr_token: qrToken, answer: answer });
+            
+            // Send to server
+            fetch('/api/student/submit-answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    qr_token: qrToken,
+                    answer: answer
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("=== DEBUG RESPONSE ===");
+                console.log("Full response:", data);
+                console.log("Is correct?", data.correct);
+                console.log("Clue value:", data.clue);
+                console.log("Next question:", data.next_question);
+                console.log("=== END DEBUG ===");
+                
+                if (data.error) {
+                    alert('Error: ' + data.error);
+                    btn.innerHTML = questionType === 'image' ? '📸 Submit Photo' : '✅ Submit Answer';
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // Show result
+                const resultDiv = document.getElementById('resultMessage');
+                const clueDiv = document.getElementById('clueMessage');
+                const clueText = document.getElementById('clueText');
+                const progressFill = document.getElementById('progressFill');
+                
+                if (data.correct) {
+                    resultDiv.textContent = '✅ Correct! +' + (data.points_earned || 10) + ' points';
+                    resultDiv.className = 'result-message correct';
+                    
+                    // Update progress bar
+                    progressFill.style.width = '100%';
+                    
+                    // Show clue if available
+                    if (data.clue !== undefined && data.clue !== null && data.clue !== '') {
+                        console.log("Displaying clue:", data.clue);
+                        clueText.textContent = data.clue;
+                        clueDiv.style.display = 'block';
+                        
+                        // Setup next button if available
+                        if (data.next_question && data.next_question.has_next) {
+                            document.getElementById('nextBtn').onclick = function() {
+                                if (data.next_question.qr_token) {
+                                    window.location.href = `/student/question/${data.next_question.qr_token}`;
+                                }
+                            };
+                        } else {
+                            document.getElementById('nextBtn').textContent = '🏁 Hunt Complete!';
+                            document.getElementById('nextBtn').onclick = function() {
+                                window.location.href = '/student/dashboard';
+                            };
+                        }
+                    } else {
+                        console.log("No clue to display (empty or missing)");
+                    }
+                } else {
+                    resultDiv.textContent = '❌ Incorrect. Try again!';
+                    resultDiv.className = 'result-message incorrect';
+                    btn.innerHTML = questionType === 'image' ? '📸 Submit Photo' : '✅ Submit Answer';
+                    btn.disabled = false;
+                }
+                
+                resultDiv.style.display = 'block';
+            })
+            .catch(error => {
+                console.error("Fetch error:", error);
+                alert('Network error. Please try again.');
+                btn.innerHTML = questionType === 'image' ? '📸 Submit Photo' : '✅ Submit Answer';
+                btn.disabled = false;
+            });
+        }
+        
+        // Auto-focus text input
+        if (questionType === 'text') {
+            document.getElementById('textAnswer').focus();
+        }
+        
+        console.log("=== DEBUG: JavaScript setup complete ===");
+    </script>
+</body>
+</html>

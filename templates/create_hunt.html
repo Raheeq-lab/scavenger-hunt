@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Scavenger Hunt - Scavenger Hunt</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: #f5f7fa; color: #333; }
+        
+        /* Navigation */
+        .navbar { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.8em; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-link { color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; transition: background 0.3s; }
+        .nav-link:hover { background: rgba(255,255,255,0.1); }
+        
+        /* Main Container */
+        .container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; margin-bottom: 20px; }
+        
+        /* Form Sections */
+        .form-section { background: white; border-radius: 15px; padding: 30px; margin-bottom: 30px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        .section-title { font-size: 1.8em; color: #333; margin-bottom: 25px; display: flex; align-items: center; gap: 10px; }
+        .section-subtitle { font-size: 1.2em; color: #666; margin-bottom: 20px; }
+        
+        /* Form Elements */
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #444; }
+        .required { color: #ff4444; }
+        input[type="text"], textarea, select, input[type="number"] { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #4CAF50; box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1); }
+        textarea { min-height: 80px; resize: vertical; }
+        .form-hint { color: #666; font-size: 0.9em; margin-top: 5px; font-style: italic; }
+        
+        /* Question Type Tabs */
+        .type-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .type-tab { padding: 10px 20px; background: #f5f5f5; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: #666; }
+        .type-tab.active { background: #4CAF50; color: white; }
+        
+        /* Multiple Choice Options */
+        .choice-option { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .choice-input { flex: 1; }
+        .remove-choice { background: #ff4444; color: white; border: none; border-radius: 5px; width: 30px; height: 30px; cursor: pointer; }
+        .add-choice { background: #2196F3; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        
+        /* File Upload */
+        .file-upload { border: 2px dashed #4CAF50; padding: 20px; text-align: center; border-radius: 10px; background: #f8fff8; cursor: pointer; }
+        .upload-icon { font-size: 2em; color: #4CAF50; margin-bottom: 10px; }
+        
+        /* Questions List */
+        .questions-list { margin-top: 30px; }
+        .question-item { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 10px; border-left: 4px solid #2196F3; }
+        .question-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .question-type { background: #e3f2fd; color: #2196F3; padding: 3px 10px; border-radius: 20px; font-size: 0.8em; }
+        .question-text { color: #444; margin-bottom: 10px; }
+        .question-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .action-btn { padding: 5px 10px; border: none; border-radius: 5px; font-size: 0.9em; cursor: pointer; }
+        .btn-edit { background: #e3f2fd; color: #2196F3; }
+        .btn-delete { background: #ffebee; color: #ff4444; }
+        
+        /* Buttons */
+        .button-group { display: flex; gap: 15px; margin-top: 30px; }
+        .btn { padding: 12px 25px; border: none; border-radius: 8px; font-size: 1em; font-weight: bold; cursor: pointer; transition: all 0.3s; text-align: center; }
+        .btn-primary { background: #4CAF50; color: white; }
+        .btn-primary:hover { background: #45a049; transform: translateY(-2px); }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e0e0e0; }
+        
+        /* Hidden Elements */
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <div class="navbar">
+        <div class="logo"><span>🎯</span> Scavenger Hunt</div>
+        <div class="nav-links">
+            <a href="/teacher/dashboard" class="nav-link">Dashboard</a>
+            <a href="/logout" class="nav-link">Logout</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <a href="/teacher/dashboard" class="back-link">← Back to Dashboard</a>
+        
+        <!-- Hunt Details Section -->
+        <div class="form-section">
+            <div class="section-title"><span>📋</span> Hunt Information</div>
+            
+            <div class="form-group">
+                <label for="huntName">Hunt Name <span class="required">*</span></label>
+                <input type="text" id="huntName" name="hunt_name" required placeholder="Biology Lab Tour">
+            </div>
+            
+            <div class="form-group">
+                <label for="huntDescription">Description</label>
+                <textarea id="huntDescription" name="hunt_description" placeholder="Describe your scavenger hunt..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Add Questions Section -->
+        <div class="form-section">
+            <div class="section-title"><span>❓</span> Add Questions</div>
+            <div class="section-subtitle">Add questions that students will answer by scanning QR codes</div>
+            
+            <!-- Question Type Selection -->
+            <div class="type-tabs">
+                <button type="button" class="type-tab active" data-type="multiple-choice">📝 Multiple Choice</button>
+                <button type="button" class="type-tab" data-type="text">✍️ Text Answer</button>
+                <button type="button" class="type-tab" data-type="image">🖼️ Image Question</button>
+            </div>
+            
+            <!-- Question Form -->
+            <div id="questionForm">
+                <!-- Question Text -->
+                <div class="form-group">
+                    <label for="questionText">Question <span class="required">*</span></label>
+                    <textarea id="questionText" placeholder="What is the capital of France?"></textarea>
+                </div>
+                
+                <!-- Multiple Choice Options (Default Visible) -->
+                <div id="multipleChoiceSection">
+                    <label>Multiple Choice Options <span class="required">*</span></label>
+                    <div id="choicesContainer">
+                        <div class="choice-option">
+                            <input type="text" class="choice-input" placeholder="Option A" data-index="0">
+                            <input type="radio" name="correctChoice" value="0" required> Correct
+                        </div>
+                        <div class="choice-option">
+                            <input type="text" class="choice-input" placeholder="Option B" data-index="1">
+                            <input type="radio" name="correctChoice" value="1"> Correct
+                        </div>
+                    </div>
+                    <button type="button" id="addChoice" class="add-choice">+ Add Option</button>
+                </div>
+                
+                <!-- Text Answer (Hidden by Default) -->
+                <div id="textAnswerSection" class="hidden">
+                    <div class="form-group">
+                        <label for="correctAnswer">Correct Answer <span class="required">*</span></label>
+                        <input type="text" id="correctAnswer" placeholder="Enter the correct answer">
+                    </div>
+                </div>
+                
+                <!-- Image Upload (Hidden by Default) -->
+                <div id="imageSection" class="hidden">
+                    <div class="form-group">
+                        <label>Upload Image <span class="required">*</span></label>
+                        <div class="file-upload" onclick="document.getElementById('imageUpload').click()">
+                            <div class="upload-icon">🖼️</div>
+                            <div>Click to upload an image</div>
+                            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                            <div id="fileName" style="color: #666; margin-top: 5px;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Clue for Next Location -->
+                <div class="form-group">
+                    <label for="clue">Clue for Next Location <span class="required">*</span></label>
+                    <input type="text" id="clue" placeholder="e.g., 'Look near the library entrance'">
+                    <div class="form-hint">This clue will be shown after student answers correctly</div>
+                </div>
+                
+                <!-- Points -->
+                <div class="form-group">
+                    <label for="points">Points</label>
+                    <input type="number" id="points" value="10" min="1" max="100">
+                </div>
+                
+                <!-- Add Question Button -->
+                <div class="button-group">
+                    <button type="button" id="addQuestionBtn" class="btn btn-primary">➕ Add This Question</button>
+                </div>
+            </div>
+            
+            <!-- Questions List (Initially Empty) -->
+            <div class="questions-list">
+                <div class="section-subtitle">Added Questions</div>
+                <div id="questionsContainer">
+                    <div id="noQuestions" style="color: #999; text-align: center; padding: 30px;">
+                        No questions added yet. Add your first question above.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Save Hunt Section -->
+        <div class="form-section">
+            <div class="section-title"><span>💾</span> Save Hunt</div>
+            
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='/teacher/dashboard'">
+                    Cancel
+                </button>
+                <button type="button" id="saveHuntBtn" class="btn btn-primary" style="background: linear-gradient(135deg, #2196F3 0%, #0D47A1 100%);">
+                    💾 Save Hunt & Generate QR Codes
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Store questions in memory
+        let questions = [];
+        let questionCounter = 1;
+        let choiceCount = 2;
+        
+        // Tab Switching
+        document.querySelectorAll('.type-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Update active tab
+                document.querySelectorAll('.type-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const type = this.dataset.type;
+                
+                // Show/hide sections
+                document.getElementById('multipleChoiceSection').classList.toggle('hidden', type !== 'multiple-choice');
+                document.getElementById('textAnswerSection').classList.toggle('hidden', type !== 'text');
+                document.getElementById('imageSection').classList.toggle('hidden', type !== 'image');
+                
+                // Clear file input when switching away from image
+                if (type !== 'image') {
+                    document.getElementById('imageUpload').value = '';
+                    document.getElementById('fileName').textContent = '';
+                }
+            });
+        });
+        
+        // Multiple Choice Options
+        document.getElementById('addChoice').addEventListener('click', function() {
+            if (choiceCount >= 6) {
+                alert('Maximum 6 options allowed');
+                return;
+            }
+            
+            const container = document.getElementById('choicesContainer');
+            const newChoice = document.createElement('div');
+            newChoice.className = 'choice-option';
+            newChoice.innerHTML = `
+                <input type="text" class="choice-input" placeholder="Option ${String.fromCharCode(65 + choiceCount)}" data-index="${choiceCount}">
+                <input type="radio" name="correctChoice" value="${choiceCount}"> Correct
+                <button type="button" class="remove-choice">×</button>
+            `;
+            container.appendChild(newChoice);
+            choiceCount++;
+            
+            // Add remove functionality
+            newChoice.querySelector('.remove-choice').addEventListener('click', function() {
+                if (container.children.length > 2) {
+                    container.removeChild(newChoice);
+                    choiceCount--;
+                }
+            });
+        });
+        
+        // File Upload Display
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'No file chosen';
+            document.getElementById('fileName').textContent = fileName;
+        });
+        
+        // Add Question to List
+        document.getElementById('addQuestionBtn').addEventListener('click', function() {
+            const questionText = document.getElementById('questionText').value.trim();
+            const clue = document.getElementById('clue').value.trim();
+            const points = parseInt(document.getElementById('points').value) || 10;
+            const activeTab = document.querySelector('.type-tab.active').dataset.type;
+            
+            // Validation
+            if (!questionText) {
+                alert('Please enter question text');
+                return;
+            }
+            
+            if (!clue) {
+                alert('Please enter a clue for next location');
+                return;
+            }
+            
+            // Get correct answer based on type
+            let correctAnswer = '';
+            let choices = [];
+            
+            if (activeTab === 'multiple-choice') {
+                // Collect choices
+                const choiceInputs = document.querySelectorAll('.choice-input');
+                let hasCorrect = false;
+                
+                choiceInputs.forEach((input, index) => {
+                    if (input.value.trim()) {
+                        choices.push(input.value.trim());
+                        // Check if this choice is marked correct
+                        const correctRadio = document.querySelector(`input[name="correctChoice"][value="${index}"]`);
+                        if (correctRadio && correctRadio.checked) {
+                            correctAnswer = input.value.trim();
+                            hasCorrect = true;
+                        }
+                    }
+                });
+                
+                if (!hasCorrect) {
+                    alert('Please select the correct answer for multiple choice');
+                    return;
+                }
+                
+                if (choices.length < 2) {
+                    alert('Please add at least 2 options for multiple choice');
+                    return;
+                }
+                
+            } else if (activeTab === 'text') {
+                correctAnswer = document.getElementById('correctAnswer').value.trim();
+                if (!correctAnswer) {
+                    alert('Please enter the correct answer for text question');
+                    return;
+                }
+            } else if (activeTab === 'image') {
+                const file = document.getElementById('imageUpload').files[0];
+                if (!file) {
+                    alert('Please upload an image for image question');
+                    return;
+                }
+                correctAnswer = 'image_uploaded'; // For image questions, any upload is correct
+            }
+            
+            // Create question object
+            const question = {
+                id: questionCounter,
+                type: activeTab,
+                text: questionText,
+                correctAnswer: correctAnswer,
+                choices: activeTab === 'multiple-choice' ? choices : [],
+                clue: clue,
+                points: points,
+                imageFile: activeTab === 'image' ? document.getElementById('imageUpload').files[0] : null
+            };
+            
+            // Add to array
+            questions.push(question);
+            
+            // Add to UI list
+            addQuestionToUI(question);
+            
+            // Clear form for next question
+            clearQuestionForm();
+            
+            // Update counter
+            questionCounter++;
+            
+            alert(`Question ${questionCounter-1} added! Add more or click "Save Hunt" when done.`);
+        });
+        
+        // Add question to UI list
+        function addQuestionToUI(question) {
+            // Hide "no questions" message
+            document.getElementById('noQuestions').style.display = 'none';
+            
+            const container = document.getElementById('questionsContainer');
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question-item';
+            questionDiv.dataset.id = question.id;
+            
+            // Get type display
+            let typeDisplay = '';
+            if (question.type === 'multiple-choice') typeDisplay = '📝 Multiple Choice';
+            else if (question.type === 'text') typeDisplay = '✍️ Text Answer';
+            else if (question.type === 'image') typeDisplay = '🖼️ Image Question';
+            
+            questionDiv.innerHTML = `
+                <div class="question-header">
+                    <div><strong>Question ${question.id}</strong></div>
+                    <div class="question-type">${typeDisplay}</div>
+                </div>
+                <div class="question-text">${question.text}</div>
+                <div class="question-actions">
+                    <button class="action-btn btn-edit" onclick="editQuestion(${question.id})">Edit</button>
+                    <button class="action-btn btn-delete" onclick="deleteQuestion(${question.id})">Delete</button>
+                </div>
+            `;
+            
+            container.appendChild(questionDiv);
+        }
+        
+        // Clear question form
+        function clearQuestionForm() {
+            document.getElementById('questionText').value = '';
+            document.getElementById('correctAnswer').value = '';
+            document.getElementById('clue').value = '';
+            document.getElementById('points').value = '10';
+            document.getElementById('imageUpload').value = '';
+            document.getElementById('fileName').textContent = '';
+            
+            // Reset choices
+            const choiceInputs = document.querySelectorAll('.choice-input');
+            choiceInputs.forEach((input, index) => {
+                input.value = index < 2 ? '' : '';
+                if (index >= 2) {
+                    input.parentElement.remove();
+                }
+            });
+            
+            // Reset radio buttons
+            const radios = document.querySelectorAll('input[name="correctChoice"]');
+            if (radios[0]) radios[0].checked = true;
+            
+            choiceCount = 2;
+        }
+        
+        // Delete question
+        function deleteQuestion(id) {
+            if (confirm('Delete this question?')) {
+                questions = questions.filter(q => q.id !== id);
+                document.querySelector(`.question-item[data-id="${id}"]`).remove();
+                
+                // Show "no questions" message if empty
+                if (questions.length === 0) {
+                    document.getElementById('noQuestions').style.display = 'block';
+                }
+            }
+        }
+        
+        // Save Hunt
+        document.getElementById('saveHuntBtn').addEventListener('click', function() {
+            const huntName = document.getElementById('huntName').value.trim();
+            const huntDescription = document.getElementById('huntDescription').value.trim();
+            
+            if (!huntName) {
+                alert('Please enter hunt name');
+                return;
+            }
+            
+            if (questions.length === 0) {
+                alert('Please add at least one question');
+                return;
+            }
+            
+            // Create FormData
+            const formData = new FormData();
+            formData.append('hunt_name', huntName);
+            formData.append('hunt_description', huntDescription);
+            formData.append('questions', JSON.stringify(questions));
+            
+            // Add image files
+            questions.forEach((q, index) => {
+                if (q.imageFile) {
+                    formData.append(`image_${index}`, q.imageFile);
+                }
+            });
+            
+            // Save button loading state
+            const saveBtn = this;
+            saveBtn.innerHTML = 'Saving...';
+            saveBtn.disabled = true;
+            
+            // Send to server
+            fetch('/teacher/create-hunt-with-questions', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Hunt created successfully! QR codes generated.');
+                    window.location.href = '/teacher/dashboard';
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to save hunt'));
+                    saveBtn.innerHTML = '💾 Save Hunt & Generate QR Codes';
+                    saveBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                alert('Network error. Please try again.');
+                saveBtn.innerHTML = '💾 Save Hunt & Generate QR Codes';
+                saveBtn.disabled = false;
+            });
+        });
+    </script>
+</body>
+</html>

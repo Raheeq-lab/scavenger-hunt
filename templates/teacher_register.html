@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teacher Registration - Scavenger Hunt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .btn {
+            background: #2196F3;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn:hover {
+            background: #1976D2;
+        }
+        .btn-secondary {
+            background: #757575;
+        }
+        .btn-secondary:hover {
+            background: #616161;
+        }
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash-error {
+            background: #ffebee;
+            color: #ff4444;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .flash-success {
+            background: #e8f5e8;
+            color: #4CAF50;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h2>📝 Teacher Registration</h2>
+        
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <form method="POST" action="/teacher/register">
+            <div class="form-group">
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" name="name" required 
+                       placeholder="Enter your full name">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" name="email" required 
+                       placeholder="teacher@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="school">School/Institution (Optional):</label>
+                <input type="text" id="school" name="school" 
+                       placeholder="Your school name">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="Create a strong password" minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password:</label>
+                <input type="password" id="confirm_password" name="confirm_password" required 
+                       placeholder="Re-enter your password">
+            </div>
+            
+            <button type="submit" class="btn">Create Account</button>
+            <a href="/teacher/login">
+                <button type="button" class="btn btn-secondary">Already have an account? Login</button>
+            </a>
+        </form>
+        
+        <div class="links">
+            <p><a href="/">← Back to Home</a></p>
+        </div>
+        
+        <script>
+            // Simple password confirmation check
+            document.querySelector('form').addEventListener('submit', function(e) {
+                var password = document.getElementById('password').value;
+                var confirmPassword = document.getElementById('confirm_password').value;
+                
+                if (password !== confirmPassword) {
+                    e.preventDefault();
+                    alert('Passwords do not match!');
+                    return false;
+                }
+                
+                if (password.length < 6) {
+                    e.preventDefault();
+                    alert('Password must be at least 6 characters long!');
+                    return false;
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>
