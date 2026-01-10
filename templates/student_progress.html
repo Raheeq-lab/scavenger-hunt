@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Progress - {{ hunt.name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .header-left {
+            flex: 1;
+        }
+        
+        .hunt-title {
+            font-size: 2.2em;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .student-info {
+            color: #666;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            text-decoration: none;
+            padding: 10px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .back-link:hover {
+            background: #f8f9fa;
+        }
+        
+        /* Progress Summary */
+        .progress-summary {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
+        }
+        
+        .summary-title {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            background: rgba(255,255,255,0.15);
+            padding: 25px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .stat-number {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        /* Progress Timeline */
+        .progress-timeline {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        
+        .section-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .timeline {
+            position: relative;
+            padding-left: 50px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 40px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .timeline-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: -40px;
+            top: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            z-index: 2;
+        }
+        
+        .timeline-item.completed .timeline-marker {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+        
+        .timeline-item.current .timeline-marker {
+            background: #2196F3;
+            border-color: #2196F3;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        .timeline-item.upcoming .timeline-marker {
+            background: #f5f5f5;
+            border-color: #ddd;
+            color: #999;
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .question-title {
+            font-size: 1.3em;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .question-status {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .status-completed {
+            background: #e8f5e8;
+            color: #2E7D32;
+        }
+        
+        .status-current {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        .status-upcoming {
+            background: #f5f5f5;
+            color: #757575;
+        }
+        
+        .question-content {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .question-details {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .detail {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #555;
+        }
+        
+        .detail-value {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        /* Score Breakdown */
+        .score-breakdown {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .score-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .score-question {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .score-points {
+            background: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        
+        /* Time Tracking */
+        .time-tracking {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        
+        .time-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .time-item {
+            text-align: center;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .time-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 10px;
+        }
+        
+        .time-label {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        /* Completion Message */
+        .completion-message {
+            background: linear-gradient(135deg, #FF9800 0%, #EF6C00 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(255, 152, 0, 0.2);
+        }
+        
+        .completion-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite alternate;
+        }
+        
+        .completion-title {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .completion-text {
+            font-size: 1.2em;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto 30px;
+            line-height: 1.6;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(33, 150, 243, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(33, 150, 243, 0); }
+        }
+        
+        @keyframes bounce {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-10px); }
+        }
+        
+        /* Print styles */
+        @media print {
+            .btn, .back-link, .action-buttons {
+                display: none !important;
+            }
+            
+            .progress-summary, .completion-message {
+                break-inside: avoid;
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .progress-summary,
+            .progress-timeline,
+            .score-breakdown,
+            .time-tracking {
+                padding: 25px;
+            }
+            
+            .timeline {
+                padding-left: 40px;
+            }
+            
+            .timeline-marker {
+                left: -35px;
+                width: 30px;
+                height: 30px;
+                font-size: 1em;
+            }
+            
+            .question-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .empty-message {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Back Link -->
+        <a href="/student/dashboard" class="back-link">
+            ← Back to Dashboard
+        </a>
+        
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1 class="hunt-title">
+                    <span>📊</span>
+                    My Progress: {{ hunt.name }}
+                </h1>
+                <div class="student-info">
+                    <span>👨‍🎓</span>
+                    Student: {{ session.get('student_name', 'Anonymous Student') }}
+                </div>
+                {% if progress.started_at %}
+                <div class="student-info">
+                    <span>⏰</span>
+                    Started: {{ progress.started_at|datetimeformat('%b %d, %Y at %I:%M %p') }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="window.print()">
+                    🖨️ Print Progress
+                </button>
+                <a href="/student/dashboard" class="btn btn-secondary">
+                    ← Dashboard
+                </a>
+            </div>
+        </div>
+        
+        {% if progress.score == 0 and not progress.completed_questions %}
+            <!-- Empty State - Not Started -->
+            <div class="empty-state">
+                <div class="empty-icon">🎯</div>
+                <h2>Hunt Not Started Yet</h2>
+                <p class="empty-message">
+                    You haven't started this scavenger hunt yet. Scan the first QR code to begin!
+                </p>
+                <a href="/student/start-hunt/{{ hunt.id }}" class="btn btn-primary">
+                    🚀 Start Hunt
+                </a>
+            </div>
+        {% else %}
+            <!-- Progress Summary -->
+            <div class="progress-summary">
+                <h2 class="summary-title">
+                    <span>📈</span>
+                    Progress Summary
+                </h2>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ progress.score }}</div>
+                        <div class="stat-label">Total Points</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ progress.completed_questions|length }}</div>
+                        <div class="stat-label">Questions Completed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ hunt.questions|length }}</div>
+                        <div class="stat-label">Total Questions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">
+                            {% if hunt.questions|length > 0 %}
+                            {{ ((progress.completed_questions|length / hunt.questions|length) * 100)|int }}%
+                            {% else %}
+                            0%
+                            {% endif %}
+                        </div>
+                        <div class="stat-label">Completion</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Timeline -->
+            <div class="progress-timeline">
+                <h2 class="section-title">
+                    <span>🗺️</span>
+                    Your Journey
+                </h2>
+                
+                <div class="timeline">
+                    {% for question in hunt.questions|sort(attribute='question_order') %}
+                    {% set is_completed = question.qr_token in progress.completed_questions %}
+                    {% set is_current = question.question_order == progress.current_question %}
+                    
+                    <div class="timeline-item 
+                        {% if is_completed %}completed{% elif is_current %}current{% else %}upcoming{% endif %}">
+                        
+                        <div class="timeline-marker">
+                            {% if is_completed %}✓{% elif is_current %}📍{% else %}{{ question.question_order }}{% endif %}
+                        </div>
+                        
+                        <div class="question-header">
+                            <div class="question-title">
+                                Question {{ question.question_order }}: {{ question.text[:100] }}{% if question.text|length > 100 %}...{% endif %}
+                            </div>
+                            <div class="question-status 
+                                {% if is_completed %}status-completed
+                                {% elif is_current %}status-current
+                                {% else %}status-upcoming{% endif %}">
+                                {% if is_completed %}Completed
+                                {% elif is_current %}Current
+                                {% else %}Upcoming{% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="question-content">
+                            {% if is_completed %}
+                            <p>✅ You answered this question correctly!</p>
+                            {% if question.next_location_hint %}
+                            <p><strong>Next clue received:</strong> {{ question.next_location_hint }}</p>
+                            {% endif %}
+                            {% elif is_current %}
+                            <p>📍 This is your current location. Scan the QR code to answer!</p>
+                            {% if question.hint %}
+                            <p><strong>Hint:</strong> {{ question.hint }}</p>
+                            {% endif %}
+                            {% else %}
+                            <p>🔒 This question is locked. Complete previous questions to unlock.</p>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="question-details">
+                            <div class="detail">
+                                <span>⭐</span>
+                                Points: <span class="detail-value">{{ question.points }}</span>
+                            </div>
+                            <div class="detail">
+                                <span>🔤</span>
+                                Type: <span class="detail-value">{{ question.question_type|title }}</span>
+                            </div>
+                            {% if is_completed %}
+                            <div class="detail">
+                                <span>✅</span>
+                                Status: <span class="detail-value">Completed</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if is_current %}
+                        <div class="action-buttons">
+                            {% set current_question = hunt.questions|selectattr("question_order", "equalto", progress.current_question)|first %}
+                            {% if current_question %}
+                            <a href="/student/question/{{ current_question.qr_token }}" class="btn btn-primary">
+                                📱 Continue Here
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Score Breakdown -->
+            <div class="score-breakdown">
+                <h2 class="section-title">
+                    <span>⭐</span>
+                    Score Breakdown
+                </h2>
+                <div class="score-grid">
+                    {% for question in hunt.questions|sort(attribute='question_order') %}
+                    {% set is_completed = question.qr_token in progress.completed_questions %}
+                    <div class="score-item">
+                        <div class="score-question">
+                            Q{{ question.question_order }}: {{ question.text[:50] }}{% if question.text|length > 50 %}...{% endif %}
+                        </div>
+                        <div class="score-points">
+                            {% if is_completed %}+{{ question.points }}{% else %}0{% endif %} pts
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- Time Tracking -->
+            <div class="time-tracking">
+                <h2 class="section-title">
+                    <span>⏱️</span>
+                    Time Tracking
+                </h2>
+                <div class="time-stats">
+                    <div class="time-item">
+                        <div class="time-value">
+                            {% if progress.started_at %}
+                            {{ progress.started_at|datetimeformat('%b %d') }}
+                            {% else %}
+                            --
+                            {% endif %}
+                        </div>
+                        <div class="time-label">Start Date</div>
+                    </div>
+                    <div class="time-item">
+                        <div class="time-value">
+                            {% if progress.completed_questions|length == hunt.questions|length %}
+                            {{ now.strftime('%b %d') }}
+                            {% else %}
+                            In Progress
+                            {% endif %}
+                        </div>
+                        <div class="time-label">Completion Date</div>
+                    </div>
+                    <div class="time-item">
+                        <div class="time-value">
+                            {{ progress.completed_questions|length }}/{{ hunt.questions|length }}
+                        </div>
+                        <div class="time-label">Questions</div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if progress.completed_questions|length == hunt.questions|length %}
+            <!-- Completion Message -->
+            <div class="completion-message">
+                <div class="completion-icon">🏆</div>
+                <h2 class="completion-title">Hunt Complete! 🎉</h2>
+                <p class="completion-text">
+                    Congratulations! You've successfully completed the "{{ hunt.name }}" scavenger hunt 
+                    with a total score of <strong>{{ progress.score }}</strong> points!
+                </p>
+                <div class="action-buttons">
+                    <a href="/student/dashboard" class="btn btn-primary">
+                        🏠 Back to Dashboard
+                    </a>
+                    <button class="btn" onclick="window.print()" style="background: white; color: #FF9800;">
+                        🖨️ Print Certificate
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Progress page loaded for hunt:', '{{ hunt.name }}');
+            
+            // Add animation to current question
+            const currentQuestion = document.querySelector('.timeline-item.current');
+            if (currentQuestion) {
+                currentQuestion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Add print styles
+            const printStyles = `
+                @media print {
+                    body { background: white !important; }
+                    .btn, .back-link, .action-buttons { display: none !important; }
+                    .progress-summary { background: #4CAF50 !important; -webkit-print-color-adjust: exact; }
+                    .completion-message { background: #FF9800 !important; -webkit-print-color-adjust: exact; }
+                }
+            `;
+            const styleSheet = document.createElement("style");
+            styleSheet.textContent = printStyles;
+            document.head.appendChild(styleSheet);
+            
+            // Calculate time spent
+            function calculateTimeSpent() {
+                const startedAt = '{{ progress.started_at }}';
+                if (startedAt) {
+                    const startDate = new Date(startedAt);
+                    const now = new Date();
+                    const diffMs = now - startDate;
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    console.log(`Time spent: ${diffHours}h ${diffMinutes}m`);
+                }
+            }
+            
+            calculateTimeSpent();
+        });
+        
+        // Share progress functionality
+        function shareProgress() {
+            const score = {{ progress.score }};
+            const completed = {{ progress.completed_questions|length }};
+            const total = {{ hunt.questions|length }};
+            const huntName = '{{ hunt.name }}';
+            
+            const shareText = `I scored ${score} points in the "${huntName}" scavenger hunt! Completed ${completed}/${total} questions.`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Scavenger Hunt Progress',
+                    text: shareText,
+                    url: window.location.href
+                });
+            } else {
+                // Copy to clipboard
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Progress copied to clipboard!');
+                });
+            }
+        }
+        
+        // Add share button if not present
+        if (!document.querySelector('.btn-share')) {
+            const actionButtons = document.querySelector('.action-buttons');
+            if (actionButtons) {
+                const shareBtn = document.createElement('button');
+                shareBtn.className = 'btn';
+                shareBtn.innerHTML = '📤 Share Progress';
+                shareBtn.style.background = '#2196F3';
+                shareBtn.style.color = 'white';
+                shareBtn.onclick = shareProgress;
+                actionButtons.appendChild(shareBtn);
+            }
+        }
+        
+        // Auto-refresh progress every 30 seconds if not complete
+        const isComplete = {{ progress.completed_questions|length }} === {{ hunt.questions|length }};
+        if (!isComplete) {
+            setTimeout(() => {
+                console.log('Auto-refreshing progress...');
+                window.location.reload();
+            }, 30000); // 30 seconds
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + P for print
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+            // Esc to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+    </script>
+</body>
+</html>
