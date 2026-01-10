@@ -73,23 +73,40 @@ def get_qr_url(qr_token):
     return f"{base_url}/student/question/{qr_token}"
 
 def generate_qr_code(qr_data, hunt_id, question_id):
-    """Generate QR code and save to file"""
-    filename = f"qr_{hunt_id}_{question_id}_{int(time.time())}.png"
-    filepath = os.path.join(app.config['QR_FOLDER'], filename)
-    
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(qr_data)
-    qr.make(fit=True)
-    
-    img = qr.make_image(fill_color="black", back_color="white")
-    img.save(filepath)
-    
-    return filename
+    """Generate QR code and save to file - ROBUST VERSION"""
+    try:
+        filename = f"qr_{hunt_id}_{question_id}_{int(time.time())}.png"
+        filepath = os.path.join(app.config['QR_FOLDER'], filename)
+        
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        
+        # Try to generate image with Pillow
+        try:
+            img = qr.make_image(fill_color="black", back_color="white")
+            img.save(filepath)
+            return filename
+        except Exception as pillow_error:
+            print(f"Pillow error: {pillow_error}")
+            # Fallback: Generate ASCII QR code
+            ascii_qr = qr.get_matrix()
+            ascii_file = filepath.replace('.png', '.txt')
+            with open(ascii_file, 'w') as f:
+                f.write(f"QR Code for URL: {qr_data}\n\n")
+                for row in ascii_qr:
+                    line = ''.join(['██' if cell else '  ' for cell in row])
+                    f.write(line + '\n')
+            return filename.replace('.png', '.txt')
+            
+    except Exception as e:
+        print(f"QR Generation Error: {e}")
+        return None
 
 # Routes
 @app.route("/")
@@ -272,35 +289,66 @@ def submit_answer():
     
     return jsonify(response)
 
-# QR Code Routes
+# QR Code Routes - SIMPLIFIED VERSION
 @app.route("/generate_qr/<int:hunt_id>/<int:question_id>")
 def generate_qr(hunt_id, question_id):
+    """Generate QR code - SIMPLIFIED FOR DEPLOYMENT"""
+    try:
+        question = Question.query.get_or_404(question_id)
+        
+        # Generate or get QR token
+        if not question.qr_token:
+            question.qr_token = str(uuid.uuid4())
+            db.session.commit()
+        
+        qr_url = get_qr_url(question.qr_token)
+        
+        # Create simple QR code (text-based if Pillow fails)
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qr_url)
+        qr.make(fit=True)
+        
+        # Try to create image
+        try:
+            img = qr.make_image(fill_color="black", back_color="white")
+            img_io = io.BytesIO()
+            img.save(img_io, 'PNG')
+            img_io.seek(0)
+            return send_file(img_io, mimetype='image/png')
+        except:
+            # Return QR code as text
+            return jsonify({
+                'qr_url': qr_url,
+                'qr_text': qr_url,
+                'message': 'Copy this URL to any QR code generator',
+                'ascii_qr': str(qr.get_matrix())
+            })
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# Alternative QR endpoint that always works
+@app.route("/qr_text/<int:hunt_id>/<int:question_id>")
+def qr_text(hunt_id, question_id):
+    """Get QR code URL as text (always works)"""
     question = Question.query.get_or_404(question_id)
     
-    # Generate or get QR token
     if not question.qr_token:
         question.qr_token = str(uuid.uuid4())
         db.session.commit()
     
     qr_url = get_qr_url(question.qr_token)
     
-    # Generate QR code
-    qr = qrcode.QRCode(
-        version=1,
-        error_correction=qrcode.constants.ERROR_CORRECT_L,
-        box_size=10,
-        border=4,
-    )
-    qr.add_data(qr_url)
-    qr.make(fit=True)
-    
-    img = qr.make_image(fill_color="black", back_color="white")
-    
-    img_io = io.BytesIO()
-    img.save(img_io, 'PNG')
-    img_io.seek(0)
-    
-    return send_file(img_io, mimetype='image/png')
+    return jsonify({
+        'success': True,
+        'qr_url': qr_url,
+        'message': 'Use this URL with any QR code generator app'
+    })
 
 # Logout
 @app.route("/logout")
@@ -309,7 +357,7 @@ def logout():
     flash('Logged out successfully', 'info')
     return redirect(url_for('home'))
 
-# Initialize database - FIXED VERSION
+# Initialize database
 with app.app_context():
     db.create_all()
 
