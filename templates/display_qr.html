@@ -1,67 +1,634 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>QR Code for Question</title>
+    <title>QR Code - {{ hunt.name }}</title>
     <style>
-        body { font-family: Arial; text-align: center; padding: 20px; }
-        .qr-container { 
-            background: white; 
-            padding: 20px; 
-            border: 2px solid #333;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .hunt-title {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+        
+        .question-info {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
             border-radius: 10px;
-            display: inline-block;
-            margin: 20px;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+        
+        @media (min-width: 768px) {
+            .content {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+        }
+        
+        .qr-section {
+            flex: 1;
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border: 2px dashed #ddd;
+        }
+        
+        .qr-placeholder {
+            width: 300px;
+            height: 300px;
+            background: #fff;
+            border: 3px solid #4CAF50;
+            border-radius: 10px;
+            margin: 0 auto 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .qr-icon {
+            font-size: 4em;
+            color: #4CAF50;
+            margin-bottom: 20px;
+        }
+        
+        .qr-text {
+            font-family: 'Courier New', monospace;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+            margin-top: 20px;
+            white-space: pre-wrap;
             text-align: left;
-            font-family: monospace;
-            white-space: pre;
-            font-size: 12px;
+            max-width: 100%;
+            overflow-x: auto;
+            font-size: 0.9em;
+            line-height: 1.4;
         }
-        .url-box { 
-            background: #f0f0f0; 
-            padding: 15px; 
-            margin: 20px; 
-            border-radius: 5px;
-            word-break: break-all;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
+        
+        .info-section {
+            flex: 1;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 15px;
         }
+        
+        .info-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4CAF50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-item {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .info-value {
+            color: #333;
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+        
         .btn {
+            display: inline-block;
+            padding: 12px 25px;
             background: #4CAF50;
             color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1em;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #757575;
+        }
+        
+        .btn-secondary:hover {
+            background: #616161;
+        }
+        
+        .btn-print {
+            background: #2196F3;
+        }
+        
+        .btn-print:hover {
+            background: #0D47A1;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        .instructions {
+            background: #e8f5e8;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .instructions-title {
+            font-size: 1.3em;
+            color: #2E7D32;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .instructions-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        
+        .instructions-list li {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .instructions-list li:before {
+            content: "✓";
+            color: #4CAF50;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .url-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            margin-top: 15px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .copy-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .copy-btn:hover {
+            background: #0D47A1;
+        }
+        
+        .copy-success {
+            color: #4CAF50;
+            font-size: 0.9em;
+            margin-left: 10px;
+            display: none;
+        }
+        
+        .download-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+            text-align: center;
+        }
+        
+        .test-link {
+            display: inline-block;
+            margin-top: 20px;
             padding: 10px 20px;
+            background: #FF9800;
+            color: white;
             text-decoration: none;
             border-radius: 5px;
-            display: inline-block;
-            margin: 10px;
+            font-weight: bold;
+        }
+        
+        .test-link:hover {
+            background: #EF6C00;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .container {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            
+            .button-group, .test-link, .copy-btn {
+                display: none !important;
+            }
+            
+            .qr-placeholder {
+                border: 2px solid #000;
+            }
+            
+            .qr-text {
+                border: 1px solid #000;
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 767px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .qr-placeholder {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .logo {
+                font-size: 2em;
+            }
+            
+            .hunt-title {
+                font-size: 1.4em;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>QR Code for Question {{ question.question_order }}</h1>
-    <h3>Hunt: {{ hunt.name }}</h3>
-    <p><strong>Question:</strong> {{ question.text }}</p>
-    
-    <div class="qr-container">
-        {{ qr_text | safe }}
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <span>🎯</span>
+                Scavenger Hunt
+                <span>🔍</span>
+            </div>
+            <div class="hunt-title">{{ hunt.name }}</div>
+            <div class="question-info">
+                Question {{ question.question_order }} • {{ question.question_type|title }}
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <!-- QR Code Section -->
+            <div class="qr-section">
+                <h2 style="color: #333; margin-bottom: 20px;">QR Code</h2>
+                
+                <div class="qr-placeholder">
+                    <div class="qr-icon">📱</div>
+                    <div style="text-align: center;">
+                        <strong>QR Code URL:</strong>
+                        <div style="word-break: break-all; font-size: 0.8em; margin-top: 10px;">
+                            {{ qr_url }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="btn btn-print" onclick="window.print()">
+                        🖨️ Print QR Code
+                    </button>
+                    <button class="btn" onclick="generateQRCode()">
+                        🔳 Generate QR Image
+                    </button>
+                </div>
+                
+                <!-- QR Code Text Representation -->
+                <div class="qr-text" id="qrText">
+                    {{ qr_text }}
+                </div>
+                
+                <div style="margin-top: 20px; color: #666; font-size: 0.9em;">
+                    <p>📱 <strong>How to use:</strong> Print this page and place the QR code at the location.</p>
+                    <p>👨‍🎓 <strong>Students:</strong> Scan with any QR scanner app or smartphone camera.</p>
+                </div>
+            </div>
+            
+            <!-- Information Section -->
+            <div class="info-section">
+                <h2 class="info-title">
+                    <span>📋</span>
+                    Question Information
+                </h2>
+                
+                <div class="info-item">
+                    <div class="info-label">
+                        <span>❓</span>
+                        Question Text
+                    </div>
+                    <div class="info-value">{{ question.text }}</div>
+                </div>
+                
+                {% if question.question_type == 'multiple-choice' and question.choices %}
+                <div class="info-item">
+                    <div class="info-label">
+                        <span>🔘</span>
+                        Choices
+                    </div>
+                    <div class="info-value">
+                        {% set choices = question.choices|fromjson %}
+                        <ol style="margin-left: 20px;">
+                            {% for choice in choices %}
+                                {% if choice %}
+                                <li>{{ choice }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="info-item">
+                    <div class="info-label">
+                        <span>✅</span>
+                        Correct Answer
+                    </div>
+                    <div class="info-value">
+                        {% if question.question_type == 'image' %}
+                        <em>Image upload required</em>
+                        {% else %}
+                        {{ question.correct_answer }}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if question.hint %}
+                <div class="info-item">
+                    <div class="info-label">
+                        <span>💡</span>
+                        Hint
+                    </div>
+                    <div class="info-value">{{ question.hint }}</div>
+                </div>
+                {% endif %}
+                
+                {% if question.next_location_hint %}
+                <div class="info-item">
+                    <div class="info-label">
+                        <span>📍</span>
+                        Next Location Hint
+                    </div>
+                    <div class="info-value">{{ question.next_location_hint }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="info-item">
+                    <div class="info-label">
+                        <span>⭐</span>
+                        Points
+                    </div>
+                    <div class="info-value">{{ question.points }} points</div>
+                </div>
+                
+                <!-- URL Box for Copying -->
+                <div class="info-item">
+                    <div class="info-label">
+                        <span>🔗</span>
+                        Direct URL
+                    </div>
+                    <div class="url-box" id="urlToCopy">{{ qr_url }}</div>
+                    <button class="copy-btn" onclick="copyURL()">
+                        📋 Copy URL
+                    </button>
+                    <span class="copy-success" id="copySuccess">Copied!</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3 class="instructions-title">
+                <span>📋</span>
+                Instructions for Teachers
+            </h3>
+            <ul class="instructions-list">
+                <li>Print this page or generate a QR code image to place at the physical location</li>
+                <li>Ensure the QR code is placed where students can easily scan it</li>
+                <li>Test the QR code with your own phone before placing it</li>
+                <li>Make sure the location matches the question context</li>
+                <li>Consider weather protection if placing outdoors (laminate or use plastic sleeve)</li>
+                <li>Keep a backup copy of all QR codes and their locations</li>
+            </ul>
+        </div>
+        
+        <!-- Download & Test Section -->
+        <div class="download-section">
+            <div class="button-group">
+                <a href="/teacher/hunt/{{ hunt.id }}/view" class="btn btn-secondary">
+                    ← Back to Hunt
+                </a>
+                <a href="/teacher/dashboard" class="btn btn-secondary">
+                    ← Dashboard
+                </a>
+                <a href="{{ qr_url }}" target="_blank" class="btn">
+                    🧪 Test Student View
+                </a>
+            </div>
+            
+            <a href="{{ qr_url }}" target="_blank" class="test-link">
+                🔗 Direct Test Link: {{ qr_url|truncate(50) }}
+            </a>
+        </div>
     </div>
     
-    <div class="url-box">
-        <strong>QR Code URL:</strong><br>
-        <code>{{ qr_url }}</code>
-    </div>
-    
-    <p>
-        <strong>Instructions:</strong><br>
-        1. Print this page or show on screen<br>
-        2. Students scan with any QR code scanner app<br>
-        3. Or visit the URL directly
-    </p>
-    
-    <div>
-        <a class="btn" href="{{ qr_url }}" target="_blank">Test this question</a>
-        <a class="btn" href="{{ url_for('view_hunt', hunt_id=hunt.id) }}">Back to Hunt</a>
-        <a class="btn" href="{{ url_for('add_question', hunt_id=hunt.id) }}">Add Another Question</a>
-    </div>
+    <script>
+        // Copy URL to clipboard
+        function copyURL() {
+            const urlText = document.getElementById('urlToCopy').textContent;
+            navigator.clipboard.writeText(urlText).then(() => {
+                const successElement = document.getElementById('copySuccess');
+                successElement.style.display = 'inline';
+                setTimeout(() => {
+                    successElement.style.display = 'none';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                alert('Failed to copy URL. Please select and copy manually.');
+            });
+        }
+        
+        // Generate QR Code using external service
+        function generateQRCode() {
+            const url = document.getElementById('urlToCopy').textContent;
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
+            
+            // Open in new window
+            const newWindow = window.open(qrCodeUrl, '_blank');
+            if (!newWindow) {
+                alert('Please allow pop-ups to generate QR code image');
+            }
+            
+            // Alternative: Download the image
+            // const link = document.createElement('a');
+            // link.href = qrCodeUrl;
+            // link.download = `qr-code-{{ hunt.name|slugify }}-q{{ question.question_order }}.png`;
+            // link.click();
+        }
+        
+        // Auto-select QR text for easy copying
+        document.addEventListener('DOMContentLoaded', function() {
+            // Make QR text selectable on click
+            const qrText = document.getElementById('qrText');
+            qrText.addEventListener('click', function() {
+                const range = document.createRange();
+                range.selectNodeContents(qrText);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            });
+            
+            // Add print message
+            window.addEventListener('beforeprint', function() {
+                console.log('Printing QR code for {{ hunt.name }} - Question {{ question.question_order }}');
+            });
+            
+            // Test QR code functionality
+            console.log('QR Code URL:', '{{ qr_url }}');
+            console.log('Question:', '{{ question.text|truncate(50) }}');
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + P for print
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+            // Ctrl/Cmd + C for copy URL
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                const activeElement = document.activeElement;
+                if (!activeElement || activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
+                    copyURL();
+                }
+            }
+        });
+        
+        // Add QR code generation note
+        function showQRGenerationNote() {
+            const note = document.createElement('div');
+            note.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #4CAF50;
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            note.textContent = 'Opening QR code generator...';
+            document.body.appendChild(note);
+            
+            setTimeout(() => {
+                note.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => note.remove(), 300);
+            }, 3000);
+        }
+        
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>
