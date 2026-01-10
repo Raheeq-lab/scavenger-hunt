@@ -166,16 +166,45 @@ def create_hunt_with_questions():
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
     
     try:
-        # Get data from the AJAX request
-        data = request.get_json()
+        # DEBUG: Check what's being sent
+        print("=== DEBUG ===")
+        print("Content-Type:", request.content_type)
+        print("Form data:", dict(request.form))
+        print("=============")
         
+        # Try to get JSON data first
+        data = None
+        if request.content_type and 'application/json' in request.content_type:
+            try:
+                data = request.get_json()
+                print("Got JSON data:", data)
+            except:
+                print("Failed to parse JSON")
+        
+        # If no JSON data, try form data
         if not data:
-            # Fallback to form data if JSON is not available
+            print("Trying form data...")
             hunt_name = request.form.get('huntName', '').strip()
             questions_data = request.form.get('questions', '[]')
-        else:
-            hunt_name = data.get('huntName', '').strip()
-            questions_data = json.dumps(data.get('questions', []))
+            
+            # Try to parse questions_data if it's a string
+            try:
+                questions = json.loads(questions_data) if isinstance(questions_data, str) else questions_data
+                data = {
+                    'huntName': hunt_name,
+                    'questions': questions
+                }
+                print("Parsed form data:", data)
+            except:
+                print("Failed to parse form data")
+                data = {'huntName': hunt_name, 'questions': []}
+        
+        # Extract data
+        hunt_name = data.get('huntName', '').strip()
+        questions = data.get('questions', [])
+        
+        print(f"Final hunt_name: '{hunt_name}'")
+        print(f"Final questions count: {len(questions)}")
         
         if not hunt_name:
             return jsonify({'success': False, 'error': 'Hunt name is required'}), 400
@@ -191,9 +220,7 @@ def create_hunt_with_questions():
         db.session.add(hunt)
         db.session.commit()
         
-        # Parse and add questions
-        questions = json.loads(questions_data)
-        
+        # Add questions to the hunt
         for i, q_data in enumerate(questions, 1):
             text = q_data.get('text', '').strip()
             correct_answer = q_data.get('answer', '').strip()
@@ -228,6 +255,8 @@ def create_hunt_with_questions():
         
         db.session.commit()
         
+        print(f"Successfully created hunt with {len(questions)} questions")
+        
         return jsonify({
             'success': True,
             'message': 'Hunt created successfully!',
@@ -237,6 +266,9 @@ def create_hunt_with_questions():
         
     except Exception as e:
         db.session.rollback()
+        print(f"ERROR: {str(e)}")
+        import traceback
+        print(f"TRACEBACK: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': str(e)
