@@ -158,7 +158,6 @@ def create_hunt():
     
     return render_template('create_hunt.html')
 
-# ADDED ROUTE: This is what the frontend JavaScript is trying to call
 @app.route("/teacher/create-hunt-with-questions", methods=['POST'])
 def create_hunt_with_questions():
     """Handle the new create hunt flow from JavaScript"""
@@ -166,45 +165,15 @@ def create_hunt_with_questions():
         return jsonify({'success': False, 'error': 'Not logged in'}), 401
     
     try:
-        # DEBUG: Check what's being sent
-        print("=== DEBUG ===")
-        print("Content-Type:", request.content_type)
-        print("Form data:", dict(request.form))
-        print("=============")
+        # Get JSON data
+        data = request.get_json()
         
-        # Try to get JSON data first
-        data = None
-        if request.content_type and 'application/json' in request.content_type:
-            try:
-                data = request.get_json()
-                print("Got JSON data:", data)
-            except:
-                print("Failed to parse JSON")
-        
-        # If no JSON data, try form data
         if not data:
-            print("Trying form data...")
-            hunt_name = request.form.get('huntName', '').strip()
-            questions_data = request.form.get('questions', '[]')
-            
-            # Try to parse questions_data if it's a string
-            try:
-                questions = json.loads(questions_data) if isinstance(questions_data, str) else questions_data
-                data = {
-                    'huntName': hunt_name,
-                    'questions': questions
-                }
-                print("Parsed form data:", data)
-            except:
-                print("Failed to parse form data")
-                data = {'huntName': hunt_name, 'questions': []}
+            return jsonify({'success': False, 'error': 'No data received'}), 400
         
-        # Extract data
         hunt_name = data.get('huntName', '').strip()
+        hunt_description = data.get('huntDescription', '').strip()
         questions = data.get('questions', [])
-        
-        print(f"Final hunt_name: '{hunt_name}'")
-        print(f"Final questions count: {len(questions)}")
         
         if not hunt_name:
             return jsonify({'success': False, 'error': 'Hunt name is required'}), 400
@@ -213,8 +182,8 @@ def create_hunt_with_questions():
         teacher_id = session['user_id']
         hunt = Hunt(
             name=hunt_name,
+            description=hunt_description,
             teacher_id=teacher_id,
-            description="",
             is_active=False
         )
         db.session.add(hunt)
@@ -222,40 +191,38 @@ def create_hunt_with_questions():
         
         # Add questions to the hunt
         for i, q_data in enumerate(questions, 1):
+            question_type = q_data.get('type', 'text')
             text = q_data.get('text', '').strip()
             correct_answer = q_data.get('answer', '').strip()
+            next_location_hint = q_data.get('nextLocationHint', '').strip()
+            points = int(q_data.get('points', 10))
             
             if not text or not correct_answer:
                 continue
             
-            # Determine question type
-            if 'choices' in q_data and len(q_data.get('choices', [])) > 0:
-                question_type = 'multiple-choice'
+            # Process choices for multiple-choice
+            choices = []
+            if question_type == 'multiple-choice':
                 choices = q_data.get('choices', [])
-                # Ensure 4 choices for multiple-choice
+                # Ensure we have exactly 4 choices for database consistency
                 while len(choices) < 4:
                     choices.append('')
-            else:
-                question_type = 'text'
-                choices = []
             
             question = Question(
                 hunt_id=hunt.id,
                 question_order=i,
-                question_type=question_type,
+                question_type='multiple-choice' if question_type == 'multiple-choice' else 'text',
                 text=text,
                 choices=json.dumps(choices) if choices else '',
                 correct_answer=correct_answer,
-                hint=q_data.get('hint', ''),
-                next_location_hint=q_data.get('nextLocationHint', ''),
+                hint='',  # Your form doesn't have a hint field
+                next_location_hint=next_location_hint,
                 qr_token=str(uuid.uuid4()),
-                points=int(q_data.get('points', 10))
+                points=points
             )
             db.session.add(question)
         
         db.session.commit()
-        
-        print(f"Successfully created hunt with {len(questions)} questions")
         
         return jsonify({
             'success': True,
@@ -266,9 +233,6 @@ def create_hunt_with_questions():
         
     except Exception as e:
         db.session.rollback()
-        print(f"ERROR: {str(e)}")
-        import traceback
-        print(f"TRACEBACK: {traceback.format_exc()}")
         return jsonify({
             'success': False,
             'error': str(e)
