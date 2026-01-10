@@ -1,16 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, flash
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-import qrcode
 import os
-from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
-import io
+from datetime import datetime
 import random
-import time
 import json
 import uuid
-import socket
 
 app = Flask(__name__)
 
@@ -18,17 +13,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///scavenger_hunt.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['QR_FOLDER'] = 'static/qr_codes'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Initialize extensions
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-
-# Create necessary folders
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['QR_FOLDER'], exist_ok=True)
 
 # Database Models
 class Teacher(db.Model):
@@ -52,9 +40,8 @@ class Hunt(db.Model):
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     hunt_id = db.Column(db.Integer, db.ForeignKey('hunt.id'), nullable=False)
-    question_type = db.Column(db.String(50), nullable=False)  # multiple-choice, text, image
+    question_type = db.Column(db.String(50), nullable=False)  # multiple-choice, text
     text = db.Column(db.Text, nullable=False)
-    image = db.Column(db.String(200))
     choices = db.Column(db.Text)  # JSON string for multiple choice
     correct_answer = db.Column(db.Text, nullable=False)
     clue = db.Column(db.Text)
@@ -63,50 +50,10 @@ class Question(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # Helper Functions
-def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 def get_qr_url(qr_token):
-    """Generate QR URL based on deployment environment"""
-    base_url = os.environ.get('BASE_URL', request.host_url.rstrip('/'))
+    """Generate QR URL"""
+    base_url = request.host_url.rstrip('/')
     return f"{base_url}/student/question/{qr_token}"
-
-def generate_qr_code(qr_data, hunt_id, question_id):
-    """Generate QR code and save to file - ROBUST VERSION"""
-    try:
-        filename = f"qr_{hunt_id}_{question_id}_{int(time.time())}.png"
-        filepath = os.path.join(app.config['QR_FOLDER'], filename)
-        
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(qr_data)
-        qr.make(fit=True)
-        
-        # Try to generate image with Pillow
-        try:
-            img = qr.make_image(fill_color="black", back_color="white")
-            img.save(filepath)
-            return filename
-        except Exception as pillow_error:
-            print(f"Pillow error: {pillow_error}")
-            # Fallback: Generate ASCII QR code
-            ascii_qr = qr.get_matrix()
-            ascii_file = filepath.replace('.png', '.txt')
-            with open(ascii_file, 'w') as f:
-                f.write(f"QR Code for URL: {qr_data}\n\n")
-                for row in ascii_qr:
-                    line = ''.join(['██' if cell else '  ' for cell in row])
-                    f.write(line + '\n')
-            return filename.replace('.png', '.txt')
-            
-    except Exception as e:
-        print(f"QR Generation Error: {e}")
-        return None
 
 # Routes
 @app.route("/")
@@ -127,13 +74,11 @@ def teacher_register():
         password = request.form['password']
         school = request.form.get('school', '')
         
-        # Check if teacher exists
         existing = Teacher.query.filter_by(email=email).first()
         if existing:
             flash('Email already registered', 'danger')
             return redirect(url_for('teacher_register'))
         
-        # Create new teacher
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         teacher = Teacher(name=name, email=email, password=hashed_password, school=school)
         db.session.add(teacher)
@@ -190,22 +135,25 @@ def create_hunt():
         db.session.add(hunt)
         db.session.commit()
         
-        flash('Hunt created successfully!', 'success')
-        return redirect(url_for('edit_hunt', hunt_id=hunt.id))
+        # Create sample questions
+        for i in range(3):
+            question = Question(
+                hunt_id=hunt.id,
+                question_type='multiple-choice',
+                text=f'Sample question {i+1}?',
+                choices=json.dumps(['Option A', 'Option B', 'Option C', 'Option D']),
+                correct_answer='Option A',
+                clue=f'Clue for question {i+1}',
+                qr_token=str(uuid.uuid4()),
+                points=10
+            )
+            db.session.add(question)
+        db.session.commit()
+        
+        flash('Hunt created successfully with 3 sample questions!', 'success')
+        return redirect(url_for('view_hunt', hunt_id=hunt.id))
     
     return render_template('create_hunt.html')
-
-@app.route("/teacher/hunt/<int:hunt_id>/edit")
-def edit_hunt(hunt_id):
-    if 'user_type' not in session or session['user_type'] != 'teacher':
-        return redirect(url_for('teacher_login'))
-    
-    hunt = Hunt.query.get_or_404(hunt_id)
-    if hunt.teacher_id != session['user_id']:
-        flash('Access denied', 'danger')
-        return redirect(url_for('teacher_dashboard'))
-    
-    return render_template('edit_hunt.html', hunt=hunt)
 
 @app.route("/teacher/hunt/<int:hunt_id>/view")
 def view_hunt(hunt_id):
@@ -217,7 +165,21 @@ def view_hunt(hunt_id):
         flash('Access denied', 'danger')
         return redirect(url_for('teacher_dashboard'))
     
-    return render_template('view_hunt.html', hunt=hunt)
+    # Get QR URLs for each question
+    questions_with_qr = []
+    for question in hunt.questions:
+        qr_url = get_qr_url(question.qr_token)
+        questions_with_qr.append({
+            'id': question.id,
+            'text': question.text,
+            'qr_token': question.qr_token,
+            'qr_url': qr_url,
+            'qr_text': f"URL: {qr_url}\nScan with any QR code app"
+        })
+    
+    return render_template('view_hunt.html', 
+                         hunt=hunt, 
+                         questions=questions_with_qr)
 
 # Student Routes
 @app.route("/student/dashboard")
@@ -241,14 +203,14 @@ def student_question(qr_token):
     
     hunt = Hunt.query.get(question.hunt_id)
     
-    # Initialize student session if needed
     if 'student_id' not in session:
         session['student_id'] = str(uuid.uuid4())
         session['student_name'] = f"Student_{random.randint(1000, 9999)}"
     
     return render_template('student_question.html',
                          question=question,
-                         hunt=hunt)
+                         hunt=hunt,
+                         choices=json.loads(question.choices) if question.choices else [])
 
 @app.route("/api/student/submit-answer", methods=['POST'])
 def submit_answer():
@@ -269,8 +231,6 @@ def submit_answer():
         is_correct = answer == question.correct_answer
     elif question.question_type == 'text':
         is_correct = answer.lower().strip() == question.correct_answer.lower().strip()
-    elif question.question_type == 'image':
-        is_correct = True  # Accept any answer for image questions
     
     # Get next question
     next_question = Question.query.filter(
@@ -289,66 +249,32 @@ def submit_answer():
     
     return jsonify(response)
 
-# QR Code Routes - SIMPLIFIED VERSION
-@app.route("/generate_qr/<int:hunt_id>/<int:question_id>")
-def generate_qr(hunt_id, question_id):
-    """Generate QR code - SIMPLIFIED FOR DEPLOYMENT"""
-    try:
-        question = Question.query.get_or_404(question_id)
-        
-        # Generate or get QR token
-        if not question.qr_token:
-            question.qr_token = str(uuid.uuid4())
-            db.session.commit()
-        
-        qr_url = get_qr_url(question.qr_token)
-        
-        # Create simple QR code (text-based if Pillow fails)
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(qr_url)
-        qr.make(fit=True)
-        
-        # Try to create image
-        try:
-            img = qr.make_image(fill_color="black", back_color="white")
-            img_io = io.BytesIO()
-            img.save(img_io, 'PNG')
-            img_io.seek(0)
-            return send_file(img_io, mimetype='image/png')
-        except:
-            # Return QR code as text
-            return jsonify({
-                'qr_url': qr_url,
-                'qr_text': qr_url,
-                'message': 'Copy this URL to any QR code generator',
-                'ascii_qr': str(qr.get_matrix())
-            })
-            
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-# Alternative QR endpoint that always works
-@app.route("/qr_text/<int:hunt_id>/<int:question_id>")
-def qr_text(hunt_id, question_id):
-    """Get QR code URL as text (always works)"""
-    question = Question.query.get_or_404(question_id)
+# Simple QR display (no image generation)
+@app.route("/qr/<qr_token>")
+def show_qr(qr_token):
+    question = Question.query.filter_by(qr_token=qr_token).first()
+    if not question:
+        return "Invalid QR code", 404
     
-    if not question.qr_token:
-        question.qr_token = str(uuid.uuid4())
-        db.session.commit()
+    qr_url = get_qr_url(qr_token)
     
-    qr_url = get_qr_url(question.qr_token)
-    
-    return jsonify({
-        'success': True,
-        'qr_url': qr_url,
-        'message': 'Use this URL with any QR code generator app'
-    })
+    # Return simple HTML with QR URL
+    return f"""
+    <html>
+    <head><title>QR Code for Question</title></head>
+    <body style="font-family: Arial; text-align: center; padding: 50px;">
+        <h1>Scavenger Hunt Question</h1>
+        <h3>{question.text[:100]}...</h3>
+        <p><strong>QR Code URL:</strong></p>
+        <div style="background: #f0f0f0; padding: 20px; margin: 20px; border-radius: 10px;">
+            <code style="font-size: 18px;">{qr_url}</code>
+        </div>
+        <p>Copy this URL and use any QR code generator app to create a QR code.</p>
+        <p>Or scan this page directly if your device supports it.</p>
+        <a href="{qr_url}">Click here to go directly to the question</a>
+    </body>
+    </html>
+    """
 
 # Logout
 @app.route("/logout")
