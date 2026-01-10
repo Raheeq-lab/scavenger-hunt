@@ -42,10 +42,6 @@
         .remove-choice { background: #ff4444; color: white; border: none; border-radius: 5px; width: 30px; height: 30px; cursor: pointer; }
         .add-choice { background: #2196F3; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
         
-        /* File Upload */
-        .file-upload { border: 2px dashed #4CAF50; padding: 20px; text-align: center; border-radius: 10px; background: #f8fff8; cursor: pointer; }
-        .upload-icon { font-size: 2em; color: #4CAF50; margin-bottom: 10px; }
-        
         /* Questions List */
         .questions-list { margin-top: 30px; }
         .question-item { background: #f8f9fa; border-radius: 10px; padding: 15px; margin-bottom: 10px; border-left: 4px solid #2196F3; }
@@ -64,6 +60,15 @@
         .btn-primary:hover { background: #45a049; transform: translateY(-2px); }
         .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
         .btn-secondary:hover { background: #e0e0e0; }
+        
+        /* Loading state */
+        .btn-loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        .btn-loading:hover {
+            transform: none !important;
+        }
         
         /* Hidden Elements */
         .hidden { display: none; }
@@ -106,7 +111,6 @@
             <div class="type-tabs">
                 <button type="button" class="type-tab active" data-type="multiple-choice">📝 Multiple Choice</button>
                 <button type="button" class="type-tab" data-type="text">✍️ Text Answer</button>
-                <button type="button" class="type-tab" data-type="image">🖼️ Image Question</button>
             </div>
             
             <!-- Question Form -->
@@ -138,19 +142,6 @@
                     <div class="form-group">
                         <label for="correctAnswer">Correct Answer <span class="required">*</span></label>
                         <input type="text" id="correctAnswer" placeholder="Enter the correct answer">
-                    </div>
-                </div>
-                
-                <!-- Image Upload (Hidden by Default) -->
-                <div id="imageSection" class="hidden">
-                    <div class="form-group">
-                        <label>Upload Image <span class="required">*</span></label>
-                        <div class="file-upload" onclick="document.getElementById('imageUpload').click()">
-                            <div class="upload-icon">🖼️</div>
-                            <div>Click to upload an image</div>
-                            <input type="file" id="imageUpload" accept="image/*" style="display: none;">
-                            <div id="fileName" style="color: #666; margin-top: 5px;"></div>
-                        </div>
                     </div>
                 </div>
                 
@@ -217,13 +208,6 @@
                 // Show/hide sections
                 document.getElementById('multipleChoiceSection').classList.toggle('hidden', type !== 'multiple-choice');
                 document.getElementById('textAnswerSection').classList.toggle('hidden', type !== 'text');
-                document.getElementById('imageSection').classList.toggle('hidden', type !== 'image');
-                
-                // Clear file input when switching away from image
-                if (type !== 'image') {
-                    document.getElementById('imageUpload').value = '';
-                    document.getElementById('fileName').textContent = '';
-                }
             });
         });
         
@@ -252,12 +236,6 @@
                     choiceCount--;
                 }
             });
-        });
-        
-        // File Upload Display
-        document.getElementById('imageUpload').addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name || 'No file chosen';
-            document.getElementById('fileName').textContent = fileName;
         });
         
         // Add Question to List
@@ -315,13 +293,6 @@
                     alert('Please enter the correct answer for text question');
                     return;
                 }
-            } else if (activeTab === 'image') {
-                const file = document.getElementById('imageUpload').files[0];
-                if (!file) {
-                    alert('Please upload an image for image question');
-                    return;
-                }
-                correctAnswer = 'image_uploaded'; // For image questions, any upload is correct
             }
             
             // Create question object
@@ -332,8 +303,7 @@
                 correctAnswer: correctAnswer,
                 choices: activeTab === 'multiple-choice' ? choices : [],
                 clue: clue,
-                points: points,
-                imageFile: activeTab === 'image' ? document.getElementById('imageUpload').files[0] : null
+                points: points
             };
             
             // Add to array
@@ -365,7 +335,6 @@
             let typeDisplay = '';
             if (question.type === 'multiple-choice') typeDisplay = '📝 Multiple Choice';
             else if (question.type === 'text') typeDisplay = '✍️ Text Answer';
-            else if (question.type === 'image') typeDisplay = '🖼️ Image Question';
             
             questionDiv.innerHTML = `
                 <div class="question-header">
@@ -388,8 +357,6 @@
             document.getElementById('correctAnswer').value = '';
             document.getElementById('clue').value = '';
             document.getElementById('points').value = '10';
-            document.getElementById('imageUpload').value = '';
-            document.getElementById('fileName').textContent = '';
             
             // Reset choices
             const choiceInputs = document.querySelectorAll('.choice-input');
@@ -420,7 +387,7 @@
             }
         }
         
-        // Save Hunt - UPDATED VERSION
+        // Save Hunt
         document.getElementById('saveHuntBtn').addEventListener('click', function() {
             const huntName = document.getElementById('huntName').value.trim();
             const huntDescription = document.getElementById('huntDescription').value.trim();
@@ -435,16 +402,16 @@
                 return;
             }
             
-            // Prepare data as JSON (not FormData)
+            // Prepare data as JSON
             const data = {
                 huntName: huntName,
                 huntDescription: huntDescription,
                 questions: questions.map(q => ({
                     type: q.type,
                     text: q.text,
-                    answer: q.correctAnswer,  // Note: using 'answer' not 'correctAnswer'
-                    hint: '',  // Your form doesn't have hint
-                    nextLocationHint: q.clue,  // Using clue as nextLocationHint
+                    answer: q.correctAnswer,
+                    hint: '',
+                    nextLocationHint: q.clue,
                     points: q.points,
                     choices: q.choices || []
                 }))
@@ -452,7 +419,8 @@
             
             // Save button loading state
             const saveBtn = this;
-            saveBtn.innerHTML = 'Saving...';
+            saveBtn.classList.add('btn-loading');
+            saveBtn.innerHTML = '⏳ Saving...';
             saveBtn.disabled = true;
             
             // Send to server as JSON
@@ -463,23 +431,35 @@
                 },
                 body: JSON.stringify(data)
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     alert('Hunt created successfully! QR codes generated.');
                     window.location.href = '/teacher/dashboard';
                 } else {
                     alert('Error: ' + (data.error || 'Failed to save hunt'));
+                    saveBtn.classList.remove('btn-loading');
                     saveBtn.innerHTML = '💾 Save Hunt & Generate QR Codes';
                     saveBtn.disabled = false;
                 }
             })
             .catch(error => {
                 alert('Network error. Please try again.');
+                saveBtn.classList.remove('btn-loading');
                 saveBtn.innerHTML = '💾 Save Hunt & Generate QR Codes';
                 saveBtn.disabled = false;
             });
         });
+        
+        // Edit question function (to be implemented)
+        function editQuestion(id) {
+            alert('Edit functionality will be added in future version.');
+        }
     </script>
 </body>
 </html>
