@@ -1,14 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_wtf.csrf import CSRFProtect  # Added
-from werkzeug.utils import secure_filename  # Added
+from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
 import random
 import json
 import uuid
-import re  # Added
+import re
 
 app = Flask(__name__)
 
@@ -36,7 +35,6 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
 # Initialize extensions
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-csrf = CSRFProtect(app)  # Initialize CSRF protection
 
 # Create upload folder if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
