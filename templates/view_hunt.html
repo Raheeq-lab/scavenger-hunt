@@ -35,6 +35,14 @@
         .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
         .btn-secondary:hover { background: #e0e0e0; }
         .button-group { display: flex; gap: 15px; margin-top: 30px; }
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-inactive { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
@@ -62,88 +70,87 @@
             <div class="hunt-meta">
                 <div>Created: {{ hunt.created_at.strftime('%B %d, %Y') if hunt.created_at else 'Recently' }}</div>
                 <div>Questions: {{ hunt.questions|length }}</div>
-                <div>Status: <span style="color: {{ 'green' if hunt.is_active else 'gray' }}">{{ 'Active' if hunt.is_active else 'Inactive' }}</span></div>
+                <div>Status: 
+                    <span class="status-badge {% if hunt.is_active %}status-active{% else %}status-inactive{% endif %}">
+                        {{ 'Active' if hunt.is_active else 'Inactive' }}
+                    </span>
+                </div>
             </div>
         </div>
         
         <!-- Questions Section -->
         <div class="questions-section">
             <div class="section-title">
-                <span>❓</span> Questions ({{ hunt.questions|length }})
+                <span>❓</span> Questions ({{ questions|length }})
             </div>
             
-            {% if hunt.questions %}
-                {% for question in hunt.questions %}
-                <div class="question-item">
-                    <div class="question-header">
-                        <div><strong>Question {{ loop.index }}</strong></div>
-                        <div class="question-type">
-                            {% if question.type == 'multiple-choice' %}📝 Multiple Choice
-                            {% elif question.type == 'text' %}✍️ Text Answer
-                            {% elif question.type == 'image' %}🖼️ Image Question
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="question-text">{{ question.text }}</div>
-                    
-                    <div class="question-details">
-                        {% if question.type == 'multiple-choice' %}
-                        <div class="detail-row">
-                            <span class="detail-label">Choices:</span>
-                            <span>{{ question.choices|join(', ') }}</span>
-                        </div>
-                        {% endif %}
-                        <div class="detail-row">
-                            <span class="detail-label">Correct Answer:</span>
-                            <span>{{ question.correct_answer }}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Clue:</span>
-                            <span>{{ question.clue }}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Points:</span>
-                            <span>{{ question.points }}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">QR Code:</span>
-                            <a href="/qr/{{ question.qr_filename }}" target="_blank">View QR Code</a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+            {% if questions %}
+                <table border="1" cellpadding="10" style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background: #f8f9fa;">
+                            <th>#</th>
+                            <th>Question</th>
+                            <th>Hint</th>
+                            <th>Next Location Hint</th>
+                            <th>QR Code</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for q in questions %}
+                        <tr>
+                            <td style="text-align: center; font-weight: bold;">{{ q.order }}</td>
+                            <td>{{ q.text[:100] }}{% if q.text|length > 100 %}...{% endif %}</td>
+                            <td>{{ q.hint or 'No hint' }}</td>
+                            <td>{{ q.next_location_hint or 'No next hint' }}</td>
+                            <td style="text-align: center;">
+                                <a href="{{ url_for('display_qr', qr_token=q.qr_token) }}" target="_blank" style="background: #4CAF50; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none;">
+                                    View QR Code
+                                </a><br>
+                                <small style="color: #666;">{{ q.qr_url[:30] }}...</small>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             {% else %}
                 <div style="text-align: center; padding: 40px; color: #999;">
-                    No questions added to this hunt yet.
+                    <p>No questions added to this hunt yet.</p>
+                    <a href="{{ url_for('add_question', hunt_id=hunt.id) }}" style="display: inline-block; margin-top: 15px; background: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                        + Add First Question
+                    </a>
                 </div>
             {% endif %}
-        </div>
-        
-        <!-- QR Codes Section -->
-        <div class="qr-section">
-            <div class="section-title">
-                <span>📱</span> QR Codes for Printing
-            </div>
-            
-            <div class="qr-grid">
-                {% for question in hunt.questions %}
-                <div class="qr-item">
-                    <img src="/qr/{{ question.qr_filename }}" alt="QR Code" class="qr-image">
-                    <div>Question {{ loop.index }}</div>
-                    <div style="font-size: 0.8em; color: #666; margin-top: 5px;">
-                        <a href="/qr/{{ question.qr_filename }}" download>Download</a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
         </div>
         
         <!-- Action Buttons -->
         <div class="button-group">
             <a href="/teacher/dashboard" class="btn btn-secondary">← Back to Dashboard</a>
-            <a href="/teacher/hunt/{{ hunt._id }}/edit" class="btn btn-primary">✏️ Edit Hunt</a>
-            <a href="#" class="btn btn-primary" style="background: #2196F5;" onclick="window.print()">🖨️ Print QR Codes</a>
+            <a href="{{ url_for('add_question', hunt_id=hunt.id) }}" class="btn btn-primary">
+                + Add Question
+            </a>
+            <button onclick="toggleHuntActive({{ hunt.id }})" class="btn" style="background: {% if hunt.is_active %}#dc3545{% else %}#28a745{% endif %}; color: white;">
+                {% if hunt.is_active %}⛔ Deactivate Hunt{% else %}✅ Activate Hunt{% endif %}
+            </button>
         </div>
     </div>
+
+    <script>
+    function toggleHuntActive(huntId) {
+        fetch(`/teacher/hunt/${huntId}/toggle-active`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert(data.message);
+                location.reload();
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error);
+        });
+    }
+    </script>
 </body>
 </html>
