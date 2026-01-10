@@ -1,6 +1,5 @@
 Flask==2.3.3
 gunicorn==20.1.0
 Flask-SQLAlchemy==3.0.5
-qrcode[pil]==7.4.2
-Pillow==10.3.0
+qrcode==7.4.2
 Flask-Bcrypt==1.0.1
