@@ -192,38 +192,43 @@
             text-align: center;
             text-decoration: none;
             font-size: 0.9em;
+            transition: all 0.2s;
         }
         
-        .btn-edit {
+        .btn-add {
             background: #e3f2fd;
             color: #2196F3;
+            border: 1px solid #bbdefb;
         }
         
-        .btn-edit:hover {
+        .btn-add:hover {
             background: #bbdefb;
         }
         
         .btn-view {
             background: #f3e5f5;
             color: #9C27B0;
+            border: 1px solid #e1bee7;
         }
         
         .btn-view:hover {
             background: #e1bee7;
         }
         
-        .btn-primary {
+        .btn-toggle {
             background: #c8e6c9;
             color: #2E7D32;
+            border: 1px solid #a5d6a7;
         }
         
-        .btn-primary:hover {
+        .btn-toggle:hover {
             background: #a5d6a7;
         }
         
         .btn-delete {
             background: #ffcdd2;
             color: #c62828;
+            border: 1px solid #ef9a9a;
         }
         
         .btn-delete:hover {
@@ -404,9 +409,9 @@
                 <div class="label">Active Hunts</div>
             </div>
             <div class="stat-card">
-                <div class="icon">✅</div>
+                <div class="icon">👥</div>
                 <div class="number">0</div>
-                <div class="label">Students Active</div>
+                <div class="label">Total Students</div>
             </div>
         </div>
         
@@ -442,11 +447,14 @@
                     </div>
                     
                     <div class="card-actions">
-                        <a href="/teacher/hunt/{{ hunt.id }}/add-question" class="action-btn btn-edit">✏️ Add Question</a>
+                        <a href="/teacher/hunt/{{ hunt.id }}/add-question" class="action-btn btn-add">➕ Add Question</a>
                         <a href="/teacher/hunt/{{ hunt.id }}/view" class="action-btn btn-view">👁️ View</a>
-                        <button class="action-btn {% if hunt.is_active %}btn-delete{% else %}btn-primary{% endif %}" 
-                                onclick="toggleHuntActive({{ hunt.id }}, '{{ hunt.name }}', this)">
+                        <button class="action-btn {% if hunt.is_active %}btn-delete{% else %}btn-toggle{% endif %}" 
+                                onclick="toggleHuntActive('{{ hunt.id }}', '{{ hunt.name|escapejs }}', this)">
                             {% if hunt.is_active %}⏸️ Deactivate{% else %}▶️ Activate{% endif %}
+                        </button>
+                        <button class="action-btn btn-delete" onclick="deleteHunt('{{ hunt.id }}', '{{ hunt.name|escapejs }}')">
+                            🗑️ Delete
                         </button>
                     </div>
                 </div>
@@ -498,9 +506,15 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()  // CSRF protection
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
                     // Update button text and class
@@ -509,7 +523,7 @@
                         button.className = 'action-btn btn-delete';
                     } else {
                         button.innerHTML = '▶️ Activate';
-                        button.className = 'action-btn btn-primary';
+                        button.className = 'action-btn btn-toggle';
                     }
                     
                     // Update status badge in the card
@@ -522,6 +536,9 @@
                         statusBadge.className = 'hunt-status status-inactive';
                     }
                     
+                    // Update active hunts count in quick stats
+                    updateActiveHuntsCount(data.is_active);
+                    
                     // Show success message
                     showFlashMessage(`Hunt ${data.is_active ? 'activated' : 'deactivated'} successfully!`, 'success');
                 } else {
@@ -531,6 +548,7 @@
                 button.disabled = false;
             })
             .catch(error => {
+                console.error('Error:', error);
                 alert('Network error. Please try again.');
                 button.innerHTML = originalText;
                 button.disabled = false;
@@ -538,9 +556,72 @@
         }
     }
     
-    // View hunt function
-    function viewHunt(huntId) {
-        window.open(`/teacher/hunt/${huntId}/view`, '_blank');
+    // Delete hunt function
+    function deleteHunt(huntId, huntName) {
+        if (!confirm(`Are you sure you want to delete "${huntName}"?\n\nThis will delete all questions and QR codes permanently.`)) {
+            return;
+        }
+        
+        // Find the delete button
+        const deleteButtons = document.querySelectorAll(`button[onclick*="deleteHunt('${huntId}'"]`);
+        const button = deleteButtons[0];
+        const originalText = button.innerHTML;
+        button.innerHTML = 'Deleting...';
+        button.disabled = true;
+        
+        fetch(`/teacher/hunt/${huntId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrfToken()  // CSRF protection
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Remove card from UI with animation
+                const card = button.closest('.card');
+                card.style.opacity = '0.5';
+                card.style.transform = 'scale(0.95)';
+                
+                setTimeout(() => {
+                    card.remove();
+                    
+                    // Update all stats
+                    updateStatsAfterDelete();
+                    
+                    // If no hunts left, show empty state
+                    const cards = document.querySelectorAll('.card');
+                    if (cards.length === 0) {
+                        location.reload(); // Reload to show empty state
+                    }
+                }, 300);
+                
+                // Show success message
+                showFlashMessage('Hunt deleted successfully!', 'success');
+            } else {
+                alert('Error: ' + (data.error || 'Failed to delete hunt'));
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Network error. Please try again.');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+    
+    // Get CSRF token from meta tag (Flask-WTF adds this)
+    function getCsrfToken() {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        return metaTag ? metaTag.getAttribute('content') : '';
     }
     
     // Show flash message
@@ -561,24 +642,48 @@
         }, 3000);
     }
     
+    // Update active hunts count
+    function updateActiveHuntsCount(isNowActive) {
+        const activeHuntsElement = document.querySelector('.stat-card:nth-child(3) .number');
+        let currentCount = parseInt(activeHuntsElement.textContent) || 0;
+        
+        if (isNowActive) {
+            currentCount++;
+        } else {
+            currentCount = Math.max(0, currentCount - 1);
+        }
+        
+        activeHuntsElement.textContent = currentCount;
+    }
+    
     // Update stats after delete
     function updateStatsAfterDelete() {
-        const totalHuntsElement = document.querySelector('.stat-card .icon:nth-child(1)').nextElementSibling;
-        const totalQuestionsElement = document.querySelector('.stat-card .icon:nth-child(2)').nextElementSibling;
-        
-        // Decrease total hunts count
+        // Update total hunts count
+        const totalHuntsElement = document.querySelector('.stat-card:nth-child(1) .number');
         const currentHunts = parseInt(totalHuntsElement.textContent) || 0;
         if (currentHunts > 0) {
             totalHuntsElement.textContent = currentHunts - 1;
         }
         
-        // Recalculate total questions (simplified - could be more accurate)
-        const currentQuestions = parseInt(totalQuestionsElement.textContent) || 0;
-        // For simplicity, decrease by average 2 questions per hunt
-        if (currentQuestions > 0) {
-            totalQuestionsElement.textContent = Math.max(0, currentQuestions - 2);
-        }
+        // Update active hunts count (decrease by 1 if the deleted hunt was active)
+        const activeHuntsElement = document.querySelector('.stat-card:nth-child(3) .number');
+        const currentActive = parseInt(activeHuntsElement.textContent) || 0;
+        // We can't know if it was active, so we'll just recalculate
+        const activeCards = document.querySelectorAll('.status-active');
+        activeHuntsElement.textContent = activeCards.length;
     }
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Teacher dashboard loaded');
+        // Add CSRF token meta tag if not present
+        if (!document.querySelector('meta[name="csrf-token"]')) {
+            const csrfMeta = document.createElement('meta');
+            csrfMeta.name = 'csrf-token';
+            csrfMeta.content = '{{ csrf_token() }}';
+            document.head.appendChild(csrfMeta);
+        }
+    });
 </script>
 </body>
 </html>
