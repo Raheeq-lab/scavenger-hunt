@@ -139,22 +139,92 @@ def teacher_dashboard():
                          teacher_name=session.get('teacher_name'),
                          hunts=hunts)
 
-@app.route("/teacher/create-hunt", methods=['GET', 'POST'])
-def create_hunt():
+# NEW ROUTE: This is what your frontend is trying to call
+@app.route("/teacher/create-hunt-with-questions", methods=['POST'])
+def create_hunt_with_questions():
     if 'user_type' not in session or session['user_type'] != 'teacher':
-        return redirect(url_for('teacher_login'))
+        return jsonify({'success': False, 'error': 'Not logged in'}), 401
     
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form.get('description', '')
-        teacher_id = session['user_id']
+    try:
+        # Get the data from the form
+        hunt_name = request.form.get('huntName', '').strip()
+        questions_data = request.form.get('questions', '[]')
         
-        hunt = Hunt(name=name, description=description, teacher_id=teacher_id)
+        if not hunt_name:
+            return jsonify({'success': False, 'error': 'Hunt name is required'}), 400
+        
+        # Parse questions data
+        try:
+            questions = json.loads(questions_data)
+        except json.JSONDecodeError:
+            return jsonify({'success': False, 'error': 'Invalid questions format'}), 400
+        
+        # Create the hunt
+        teacher_id = session['user_id']
+        hunt = Hunt(
+            name=hunt_name,
+            teacher_id=teacher_id,
+            description=f"Scavenger hunt created on {datetime.now().strftime('%Y-%m-%d')}",
+            is_active=False
+        )
         db.session.add(hunt)
         db.session.commit()
         
-        flash('Hunt created successfully! Now add questions.', 'success')
-        return redirect(url_for('add_question', hunt_id=hunt.id))
+        # Add questions to the hunt
+        for i, q_data in enumerate(questions, 1):
+            question_type = q_data.get('type', 'text')
+            text = q_data.get('text', '').strip()
+            correct_answer = q_data.get('answer', '').strip()
+            hint = q_data.get('hint', '').strip()
+            next_location_hint = q_data.get('nextLocationHint', '').strip()
+            points = int(q_data.get('points', 10))
+            
+            if not text or not correct_answer:
+                continue  # Skip invalid questions
+            
+            # Process choices for multiple-choice
+            choices = []
+            if question_type == 'multiple-choice':
+                choices = q_data.get('choices', [])
+                # Ensure we have exactly 4 choices
+                while len(choices) < 4:
+                    choices.append('')
+            
+            question = Question(
+                hunt_id=hunt.id,
+                question_order=i,
+                question_type=question_type,
+                text=text,
+                choices=json.dumps(choices) if choices else '',
+                correct_answer=correct_answer,
+                hint=hint,
+                next_location_hint=next_location_hint,
+                qr_token=str(uuid.uuid4()),
+                points=points
+            )
+            db.session.add(question)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Hunt created successfully!',
+            'hunt_id': hunt.id,
+            'redirect_url': url_for('view_hunt', hunt_id=hunt.id)
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+# Keep the old create-hunt route for backward compatibility
+@app.route("/teacher/create-hunt", methods=['GET'])
+def create_hunt():
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return redirect(url_for('teacher_login'))
     
     return render_template('create_hunt.html')
 
@@ -172,8 +242,8 @@ def add_question(hunt_id):
         question_type = request.form['question_type']
         text = request.form['text']
         correct_answer = request.form['correct_answer']
-        hint = request.form.get('hint', '')  # Hint for this location
-        next_location_hint = request.form.get('next_location_hint', '')  # Hint for next location
+        hint = request.form.get('hint', '')
+        next_location_hint = request.form.get('next_location_hint', '')
         points = int(request.form.get('points', 10))
         
         # Get next question order
@@ -267,7 +337,7 @@ def student_dashboard():
     if 'student_id' not in session:
         session['student_id'] = str(uuid.uuid4())
         session['student_name'] = f"Student_{random.randint(1000, 9999)}"
-        session['progress'] = {}  # Store progress for each hunt
+        session['progress'] = {}
     
     active_hunts = Hunt.query.filter_by(is_active=True).all()
     return render_template('student_dashboard.html',
