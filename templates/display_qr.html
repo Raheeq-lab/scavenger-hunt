@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code for Question</title>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 20px; }
+        .qr-container { 
+            background: white; 
+            padding: 20px; 
+            border: 2px solid #333;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px;
+            text-align: left;
+            font-family: monospace;
+            white-space: pre;
+            font-size: 12px;
+        }
+        .url-box { 
+            background: #f0f0f0; 
+            padding: 15px; 
+            margin: 20px; 
+            border-radius: 5px;
+            word-break: break-all;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Code for Question {{ question.question_order }}</h1>
+    <h3>Hunt: {{ hunt.name }}</h3>
+    <p><strong>Question:</strong> {{ question.text }}</p>
+    
+    <div class="qr-container">
+        {{ qr_text | safe }}
+    </div>
+    
+    <div class="url-box">
+        <strong>QR Code URL:</strong><br>
+        <code>{{ qr_url }}</code>
+    </div>
+    
+    <p>
+        <strong>Instructions:</strong><br>
+        1. Print this page or show on screen<br>
+        2. Students scan with any QR code scanner app<br>
+        3. Or visit the URL directly
+    </p>
+    
+    <div>
+        <a class="btn" href="{{ qr_url }}" target="_blank">Test this question</a>
+        <a class="btn" href="{{ url_for('view_hunt', hunt_id=hunt.id) }}">Back to Hunt</a>
+        <a class="btn" href="{{ url_for('add_question', hunt_id=hunt.id) }}">Add Another Question</a>
+    </div>
+</body>
+</html>
