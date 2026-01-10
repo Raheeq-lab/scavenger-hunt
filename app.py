@@ -310,12 +310,14 @@ def view_hunt(hunt_id):
         questions.append({
             'id': question.id,
             'order': question.question_order,
+            'type': question.question_type,
             'text': question.text,
             'hint': question.hint,
             'next_location_hint': question.next_location_hint,
             'qr_token': question.qr_token,
             'qr_url': qr_url,
             'qr_text': qr_text,
+            'points': question.points,
             'is_last': question.question_order == len(hunt.questions)
         })
     
@@ -350,9 +352,35 @@ def student_dashboard():
         session['progress'] = {}
     
     active_hunts = Hunt.query.filter_by(is_active=True).all()
+    
+    # Get started hunts from session
+    started_hunts = {}
+    if 'progress' in session:
+        for hunt_id_str, progress in session['progress'].items():
+            try:
+                hunt_id = int(hunt_id_str)
+                hunt = Hunt.query.get(hunt_id)
+                if hunt and hunt.is_active:
+                    # Get current question token
+                    current_q_order = progress.get('current_question', 1)
+                    current_question = Question.query.filter_by(
+                        hunt_id=hunt_id, 
+                        question_order=current_q_order
+                    ).first()
+                    
+                    started_hunts[hunt_id] = {
+                        'hunt_name': hunt.name,
+                        'score': progress.get('score', 0),
+                        'completed_questions': progress.get('completed_questions', []),
+                        'current_question_token': current_question.qr_token if current_question else None
+                    }
+            except:
+                continue
+    
     return render_template('student_dashboard.html',
                          student_name=session.get('student_name'),
-                         active_hunts=active_hunts)
+                         active_hunts=active_hunts,
+                         started_hunts=started_hunts)
 
 @app.route("/student/start-hunt/<int:hunt_id>")
 def start_hunt(hunt_id):
@@ -374,6 +402,7 @@ def start_hunt(hunt_id):
             'completed_questions': [],
             'started_at': datetime.utcnow().isoformat()
         }
+        session.modified = True
     
     # Get first question
     first_question = Question.query.filter_by(hunt_id=hunt_id, question_order=1).first()
@@ -409,10 +438,20 @@ def student_question(qr_token):
         question_order=question.question_order + 1
     ).first()
     
+    # Parse choices for multiple-choice
+    choices = []
+    if question.choices:
+        try:
+            choices = json.loads(question.choices)
+            # Filter out empty choices
+            choices = [choice for choice in choices if choice.strip()]
+        except:
+            choices = []
+    
     return render_template('student_question.html',
                          question=question,
                          hunt=hunt,
-                         choices=json.loads(question.choices) if question.choices else [],
+                         choices=choices,
                          next_question=next_question)
 
 @app.route("/api/student/submit-answer", methods=['POST'])
@@ -452,7 +491,7 @@ def submit_answer():
     # Check answer
     is_correct = False
     if question.question_type == 'multiple-choice':
-        is_correct = answer == question.correct_answer
+        is_correct = answer.strip() == question.correct_answer.strip()
     elif question.question_type == 'text':
         is_correct = answer.lower().strip() == question.correct_answer.lower().strip()
     
@@ -477,7 +516,7 @@ def submit_answer():
         'points_earned': question.points if is_correct else 0,
         'total_score': progress['score'],
         'hint': question.hint if is_correct else None,
-        'next_location_hint': next_question.next_location_hint if next_question and is_correct else None,
+        'next_location_hint': question.next_location_hint if is_correct else None,
         'next_qr_token': next_question.qr_token if next_question else None,
         'has_next': next_question is not None,
         'is_last_question': next_question is None,
@@ -497,7 +536,8 @@ def student_progress(hunt_id):
     return render_template('student_progress.html',
                          hunt=hunt,
                          progress=progress,
-                         total_questions=len(hunt.questions))
+                         total_questions=len(hunt.questions),
+                         now=datetime.utcnow())
 
 # QR Display Page
 @app.route("/qr/display/<qr_token>")
