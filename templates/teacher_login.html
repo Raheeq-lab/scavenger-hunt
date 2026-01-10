@@ -3,8 +3,14 @@
 <head>
     <title>Teacher Login - Scavenger Hunt</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
             margin: 0;
@@ -12,6 +18,7 @@
             justify-content: center;
             align-items: center;
         }
+        
         .login-container {
             background: white;
             padding: 40px;
@@ -19,75 +26,162 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             width: 350px;
         }
+        
         h2 {
             color: #333;
             text-align: center;
             margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
+        
         .form-group {
             margin-bottom: 20px;
         }
+        
         label {
             display: block;
             margin-bottom: 5px;
             color: #555;
             font-weight: bold;
         }
+        
         input[type="email"],
         input[type="password"] {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
+            padding: 12px;
+            border: 2px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
             box-sizing: border-box;
+            transition: border-color 0.3s;
         }
+        
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
         .btn {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
             color: white;
-            padding: 12px;
+            padding: 14px;
             border: none;
             border-radius: 5px;
             width: 100%;
             font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
             margin-top: 10px;
+            transition: all 0.3s;
         }
+        
         .btn:hover {
-            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
         }
+        
         .links {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 25px;
         }
+        
         .links a {
             color: #667eea;
             text-decoration: none;
+            font-weight: bold;
         }
-        .error {
-            color: #ff4444;
-            background: #ffebee;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            display: none;
+        
+        .links a:hover {
+            text-decoration: underline;
         }
+        
+        .links p {
+            margin-bottom: 10px;
+            color: #666;
+        }
+        
         .flash-messages {
             margin-bottom: 20px;
+        }
+        
+        .flash-message {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .flash-danger {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+        
+        .flash-success {
+            background: #e8f5e8;
+            color: #2E7D32;
+            border: 1px solid #c8e6c9;
+        }
+        
+        .flash-info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
+        }
+        
+        .input-icon {
+            position: relative;
+        }
+        
+        .input-icon i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+        
+        .input-icon input {
+            padding-left: 40px;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+        }
+        
+        @media (max-width: 400px) {
+            .login-container {
+                width: 90%;
+                padding: 30px 20px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h2>👨‍🏫 Teacher Login</h2>
+        <h2>
+            <span>👨‍🏫</span>
+            Teacher Login
+        </h2>
         
+        <!-- Flash Messages -->
         <div class="flash-messages">
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="error" style="display: block; 
-                            {% if category == 'danger' %}background: #ffebee; color: #ff4444;
-                            {% else %}background: #e8f5e8; color: #4CAF50;{% endif %}">
+                        <div class="flash-message flash-{{ category }}">
                             {{ message }}
                         </div>
                     {% endfor %}
@@ -96,14 +190,27 @@
         </div>
 
         <form method="POST" action="/teacher/login">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
             <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
+                <label for="email">Email Address</label>
+                <div class="input-icon">
+                    <i>📧</i>
+                    <input type="email" id="email" name="email" required 
+                           placeholder="teacher@example.com">
+                </div>
             </div>
             
             <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">Password</label>
+                <div class="input-icon">
+                    <i>🔒</i>
+                    <input type="password" id="password" name="password" required 
+                           placeholder="Enter your password">
+                    <button type="button" class="password-toggle" onclick="togglePassword()">
+                        👁️
+                    </button>
+                </div>
             </div>
             
             <button type="submit" class="btn">Login</button>
@@ -114,122 +221,54 @@
             <p><a href="/">← Back to Home</a></p>
         </div>
     </div>
-</body>
-</html><!DOCTYPE html>
-<html>
-<head>
-    <title>Teacher Login - Scavenger Hunt</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            width: 350px;
-        }
-        h2 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: bold;
-        }
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            box-sizing: border-box;
-        }
-        .btn {
-            background: #4CAF50;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 5px;
-            width: 100%;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        .btn:hover {
-            background: #45a049;
-        }
-        .links {
-            text-align: center;
-            margin-top: 20px;
-        }
-        .links a {
-            color: #667eea;
-            text-decoration: none;
-        }
-        .error {
-            color: #ff4444;
-            background: #ffebee;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            display: none;
-        }
-        .flash-messages {
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-    <div class="login-container">
-        <h2>👨‍🏫 Teacher Login</h2>
-        
-        <div class="flash-messages">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="error" style="display: block; 
-                            {% if category == 'danger' %}background: #ffebee; color: #ff4444;
-                            {% else %}background: #e8f5e8; color: #4CAF50;{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        </div>
-
-        <form method="POST" action="/teacher/login">
-            <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
-            </div>
+    
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const toggleButton = document.querySelector('.password-toggle');
             
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            
-            <button type="submit" class="btn">Login</button>
-        </form>
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleButton.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleButton.textContent = '👁️';
+            }
+        }
         
-        <div class="links">
-            <p>Don't have an account? <a href="/teacher/register">Register here</a></p>
-            <p><a href="/">← Back to Home</a></p>
-        </div>
-    </div>
+        // Auto-focus email field
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('email').focus();
+            
+            // Add Enter key support
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    document.querySelector('form').submit();
+                }
+            });
+        });
+        
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!email || !password) {
+                e.preventDefault();
+                alert('Please fill in all fields');
+                return false;
+            }
+            
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('Please enter a valid email address');
+                return false;
+            }
+            
+            return true;
+        });
+    </script>
 </body>
 </html>
