@@ -461,7 +461,7 @@
                     alert('Please upload an image');
                     return;
                 }
-                answer = 'image_upload'; // This will trigger image processing on server
+                answer = 'image_upload';
                 console.log("Image uploaded:", uploadedFile.name);
             }
             
@@ -483,8 +483,7 @@
             fetch('/api/student/submit-answer', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken()  // CSRF protection
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     qr_token: qrToken,
@@ -524,9 +523,6 @@
             
             fetch('/api/student/submit-image', {
                 method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCsrfToken()  // CSRF protection
-                },
                 body: formData
             })
             .then(response => {
@@ -640,12 +636,6 @@
             }
         }
         
-        // Get CSRF token from meta tag
-        function getCsrfToken() {
-            const metaTag = document.querySelector('meta[name="csrf-token"]');
-            return metaTag ? metaTag.getAttribute('content') : '';
-        }
-        
         // Auto-focus text input
         if (questionType === 'text') {
             document.getElementById('textAnswer').focus();
@@ -654,21 +644,12 @@
         // Initialize progress bar based on question order
         function updateProgressBar() {
             const progressFill = document.getElementById('progressFill');
-            // This is a simple progress indicator - in a real app, you might track actual progress
             progressFill.style.width = '0%';
         }
         
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             updateProgressBar();
-            
-            // Add CSRF token meta tag if not present
-            if (!document.querySelector('meta[name="csrf-token"]')) {
-                const csrfMeta = document.createElement('meta');
-                csrfMeta.name = 'csrf-token';
-                csrfMeta.content = '{{ csrf_token() }}';
-                document.head.appendChild(csrfMeta);
-            }
             
             console.log("=== DEBUG: JavaScript setup complete ===");
         });
