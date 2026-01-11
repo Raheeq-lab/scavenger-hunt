@@ -450,10 +450,10 @@
                         <a href="/teacher/hunt/{{ hunt.id }}/add-question" class="action-btn btn-add">➕ Add Question</a>
                         <a href="/teacher/hunt/{{ hunt.id }}/view" class="action-btn btn-view">👁️ View</a>
                         <button class="action-btn {% if hunt.is_active %}btn-delete{% else %}btn-toggle{% endif %}" 
-                                onclick="toggleHuntActive('{{ hunt.id }}', '{{ hunt.name|escapejs }}', this)">
+                                onclick="toggleHuntActive('{{ hunt.id }}', '{{ hunt.name }}', this)">
                             {% if hunt.is_active %}⏸️ Deactivate{% else %}▶️ Activate{% endif %}
                         </button>
-                        <button class="action-btn btn-delete" onclick="deleteHunt('{{ hunt.id }}', '{{ hunt.name|escapejs }}')">
+                        <button class="action-btn btn-delete" onclick="deleteHunt('{{ hunt.id }}', '{{ hunt.name }}')">
                             🗑️ Delete
                         </button>
                     </div>
@@ -505,8 +505,7 @@
             fetch(`/teacher/hunt/${huntId}/toggle-active`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken()  // CSRF protection
+                    'Content-Type': 'application/json'
                 }
             })
             .then(response => {
@@ -572,8 +571,7 @@
         fetch(`/teacher/hunt/${huntId}/delete`, {
             method: 'DELETE',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCsrfToken()  // CSRF protection
+                'Content-Type': 'application/json'
             }
         })
         .then(response => {
@@ -616,12 +614,6 @@
             button.innerHTML = originalText;
             button.disabled = false;
         });
-    }
-    
-    // Get CSRF token from meta tag (Flask-WTF adds this)
-    function getCsrfToken() {
-        const metaTag = document.querySelector('meta[name="csrf-token"]');
-        return metaTag ? metaTag.getAttribute('content') : '';
     }
     
     // Show flash message
@@ -676,13 +668,6 @@
     // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Teacher dashboard loaded');
-        // Add CSRF token meta tag if not present
-        if (!document.querySelector('meta[name="csrf-token"]')) {
-            const csrfMeta = document.createElement('meta');
-            csrfMeta.name = 'csrf-token';
-            csrfMeta.content = '{{ csrf_token() }}';
-            document.head.appendChild(csrfMeta);
-        }
     });
 </script>
 </body>
