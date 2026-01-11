@@ -125,7 +125,7 @@
         }
         
         .btn-report {
-            background: linear-gradient(135deg, #2196F3 0%, #0D47A1 100%);
+            background: linear-gradient(135-gradient: 135deg, #2196F3 0%, #0D47A1 100%);
             color: white;
         }
         
@@ -280,39 +280,49 @@
         }
     </style>
 </head>
-<body class="error-type-{% if message == 'Page Not Found' %}404{% elif message == 'Internal Server Error' %}500{% elif message == 'Access denied' %}access{% else %}500{% endif %}">
+<body class="error-type-{% if message %}{% if message == 'Page Not Found' %}404{% elif message == 'Internal Server Error' %}500{% elif message == 'Access denied' %}access{% else %}500{% endif %}{% else %}500{% endif %}">
     <div class="error-container">
         <div class="error-icon">
-            {% if message == 'Page Not Found' %}
-            🔍
-            {% elif message == 'Internal Server Error' %}
-            ⚠️
-            {% elif message == 'Access denied' %}
-            🔒
-            {% elif message == 'Hunt not active' %}
-            ⏸️
-            {% elif message == 'Invalid QR code' %}
-            📱
+            {% if message %}
+                {% if message == 'Page Not Found' %}
+                🔍
+                {% elif message == 'Internal Server Error' %}
+                ⚠️
+                {% elif message == 'Access denied' %}
+                🔒
+                {% elif message == 'Hunt not active' %}
+                ⏸️
+                {% elif message == 'Invalid QR code' %}
+                📱
+                {% else %}
+                ❌
+                {% endif %}
             {% else %}
-            ❌
+            ⚠️
             {% endif %}
         </div>
         
-        <h1 class="error-title">{{ message }}</h1>
+        <h1 class="error-title">
+            {{ message if message else 'An Error Occurred' }}
+        </h1>
         
         <div class="error-message">
-            {% if message == 'Page Not Found' %}
-            The page you're looking for doesn't exist or has been moved.
-            {% elif message == 'Internal Server Error' %}
-            Something went wrong on our end. We're working to fix it.
-            {% elif message == 'Access denied' %}
-            You don't have permission to access this page.
-            {% elif message == 'Hunt not active' %}
-            This scavenger hunt is currently not active.
-            {% elif message == 'Invalid QR code' %}
-            This QR code doesn't match any question in our system.
-            {% elif details %}
-            {{ details }}
+            {% if message %}
+                {% if message == 'Page Not Found' %}
+                The page you're looking for doesn't exist or has been moved.
+                {% elif message == 'Internal Server Error' %}
+                Something went wrong on our end. We're working to fix it.
+                {% elif message == 'Access denied' %}
+                You don't have permission to access this page.
+                {% elif message == 'Hunt not active' %}
+                This scavenger hunt is currently not active.
+                {% elif message == 'Invalid QR code' %}
+                This QR code doesn't match any question in our system.
+                {% elif details %}
+                {{ details }}
+                {% else %}
+                An unexpected error occurred. Please try again.
+                {% endif %}
             {% else %}
             An unexpected error occurred. Please try again.
             {% endif %}
@@ -330,33 +340,48 @@
         
         <!-- Action Buttons -->
         <div class="action-buttons">
-            {% if message == 'Page Not Found' or message == 'Invalid QR code' %}
-            <a href="/" class="btn btn-primary">
-                <span>🏠</span>
-                Go Home
-            </a>
-            <a href="javascript:history.back()" class="btn btn-secondary">
-                <span>↩️</span>
-                Go Back
-            </a>
-            {% elif message == 'Access denied' %}
-            <a href="/teacher/login" class="btn btn-primary">
-                <span>👨‍🏫</span>
-                Teacher Login
-            </a>
-            <a href="/" class="btn btn-secondary">
-                <span>🏠</span>
-                Home Page
-            </a>
-            {% elif message == 'Hunt not active' %}
-            <a href="/student/dashboard" class="btn btn-primary">
-                <span>👨‍🎓</span>
-                Student Dashboard
-            </a>
-            <a href="/" class="btn btn-secondary">
-                <span>🏠</span>
-                Home Page
-            </a>
+            {% if message %}
+                {% if message == 'Page Not Found' or message == 'Invalid QR code' %}
+                <a href="/" class="btn btn-primary">
+                    <span>🏠</span>
+                    Go Home
+                </a>
+                <a href="javascript:history.back()" class="btn btn-secondary">
+                    <span>↩️</span>
+                    Go Back
+                </a>
+                {% elif message == 'Access denied' %}
+                <a href="/teacher/login" class="btn btn-primary">
+                    <span>👨‍🏫</span>
+                    Teacher Login
+                </a>
+                <a href="/" class="btn btn-secondary">
+                    <span>🏠</span>
+                    Home Page
+                </a>
+                {% elif message == 'Hunt not active' %}
+                <a href="/student/dashboard" class="btn btn-primary">
+                    <span>👨‍🎓</span>
+                    Student Dashboard
+                </a>
+                <a href="/" class="btn btn-secondary">
+                    <span>🏠</span>
+                    Home Page
+                </a>
+                {% else %}
+                <a href="/" class="btn btn-primary">
+                    <span>🏠</span>
+                    Go Home
+                </a>
+                <a href="javascript:history.back()" class="btn btn-secondary">
+                    <span>↩️</span>
+                    Go Back
+                </a>
+                <a href="/contact" class="btn btn-report">
+                    <span>📧</span>
+                    Report Issue
+                </a>
+                {% endif %}
             {% else %}
             <a href="/" class="btn btn-primary">
                 <span>🏠</span>
@@ -380,27 +405,33 @@
                 What you can do:
             </h3>
             <ul class="help-list">
-                {% if message == 'Page Not Found' %}
-                <li>Check if the URL is spelled correctly</li>
-                <li>Use the navigation menu to find what you need</li>
-                <li>Contact support if you believe this is an error</li>
-                {% elif message == 'Internal Server Error' %}
-                <li>Refresh the page and try again</li>
-                <li>Clear your browser cache and cookies</li>
-                <li>Try again in a few minutes</li>
-                <li>Contact technical support if the issue persists</li>
-                {% elif message == 'Access denied' %}
-                <li>Make sure you're logged in with the correct account</li>
-                <li>Contact the hunt creator for access</li>
-                <li>Check if you have the proper permissions</li>
-                {% elif message == 'Hunt not active' %}
-                <li>Try another scavenger hunt</li>
-                <li>Contact the teacher to activate the hunt</li>
-                <li>Check back later when the hunt is active</li>
-                {% elif message == 'Invalid QR code' %}
-                <li>Make sure you scanned the correct QR code</li>
-                <li>Check if the QR code is damaged or obscured</li>
-                <li>Contact your teacher for a new QR code</li>
+                {% if message %}
+                    {% if message == 'Page Not Found' %}
+                    <li>Check if the URL is spelled correctly</li>
+                    <li>Use the navigation menu to find what you need</li>
+                    <li>Contact support if you believe this is an error</li>
+                    {% elif message == 'Internal Server Error' %}
+                    <li>Refresh the page and try again</li>
+                    <li>Clear your browser cache and cookies</li>
+                    <li>Try again in a few minutes</li>
+                    <li>Contact technical support if the issue persists</li>
+                    {% elif message == 'Access denied' %}
+                    <li>Make sure you're logged in with the correct account</li>
+                    <li>Contact the hunt creator for access</li>
+                    <li>Check if you have the proper permissions</li>
+                    {% elif message == 'Hunt not active' %}
+                    <li>Try another scavenger hunt</li>
+                    <li>Contact the teacher to activate the hunt</li>
+                    <li>Check back later when the hunt is active</li>
+                    {% elif message == 'Invalid QR code' %}
+                    <li>Make sure you scanned the correct QR code</li>
+                    <li>Check if the QR code is damaged or obscured</li>
+                    <li>Contact your teacher for a new QR code</li>
+                    {% else %}
+                    <li>Refresh the page and try again</li>
+                    <li>Go back to the previous page</li>
+                    <li>Contact support if the error continues</li>
+                    {% endif %}
                 {% else %}
                 <li>Refresh the page and try again</li>
                 <li>Go back to the previous page</li>
@@ -416,7 +447,7 @@
                 Show Technical Details
             </button>
             <div class="technical-content" id="technicalContent">
-                <div><strong>Error Type:</strong> {{ message }}</div>
+                <div><strong>Error Type:</strong> {{ message if message else 'Unknown Error' }}</div>
                 {% if details %}
                 <div style="margin-top: 10px;"><strong>Details:</strong> {{ details }}</div>
                 {% endif %}
@@ -429,7 +460,11 @@
         <!-- Footer -->
         <div class="footer">
             <p>© 2024 Scavenger Hunt Educational Platform</p>
-            <p style="font-size: 0.8em; margin-top: 5px;">Error Reference: <span class="error-code">ERR-{{ message|replace(' ', '-')|upper }}</span></p>
+            <p style="font-size: 0.8em; margin-top: 5px;">
+                Error Reference: <span class="error-code">
+                    ERR-{% if message %}{{ message|replace(' ', '-')|upper }}{% else %}UNKNOWN{% endif %}
+                </span>
+            </p>
         </div>
     </div>
     
@@ -437,7 +472,7 @@
         // Set current URL and timestamp
         document.getElementById('currentURL').textContent = window.location.href;
         document.getElementById('timestamp').textContent = new Date().toLocaleString();
-        document.getElementById('userAgent').textContent = navigator.userAgent;
+        document.getElementById('userAgent').textContent = navigator.userAgent || 'Unknown';
         
         function toggleTechnicalInfo() {
             const content = document.getElementById('technicalContent');
@@ -462,8 +497,8 @@
         
         // Log error to console for debugging
         console.error('Page Error:', {
-            message: '{{ message }}',
-            details: '{{ details }}',
+            message: '{{ message if message else "Unknown" }}',
+            details: '{{ details if details else "No details" }}',
             url: window.location.href,
             timestamp: new Date().toISOString()
         });
@@ -504,6 +539,15 @@
             'color: #ff4444; font-weight: bold; font-size: 14px;',
             'color: #666;'
         );
+        
+        // Fix for the replace filter in JavaScript - make it safe
+        function safeReplace(str, find, replace) {
+            if (!str) return '';
+            return str.replace(new RegExp(find, 'g'), replace);
+        }
+        
+        // Example usage if needed
+        // const errorCode = safeReplace("{{ message if message else '' }}", ' ', '-');
     </script>
 </body>
 </html>
