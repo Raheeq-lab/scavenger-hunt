@@ -368,7 +368,7 @@
         
         <form id="createHuntForm" method="POST" action="/teacher/create-hunt">
             <div class="form-container">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- CSRF token removed here -->
                 
                 <!-- Hunt Details Section -->
                 <div class="form-section">
@@ -708,8 +708,7 @@
             fetch('/teacher/create-hunt-with-questions', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCsrfToken()
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     huntName: huntName,
@@ -748,25 +747,6 @@
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             });
-        }
-        
-        // Get CSRF token from meta tag or form
-        function getCsrfToken() {
-            const metaTag = document.querySelector('meta[name="csrf-token"]');
-            if (metaTag) return metaTag.getAttribute('content');
-            
-            const formToken = document.querySelector('input[name="csrf_token"]');
-            if (formToken) return formToken.value;
-            
-            return '';
-        }
-        
-        // Add CSRF meta tag if not present
-        if (!document.querySelector('meta[name="csrf-token"]')) {
-            const csrfMeta = document.createElement('meta');
-            csrfMeta.name = 'csrf-token';
-            csrfMeta.content = '{{ csrf_token() }}';
-            document.head.appendChild(csrfMeta);
         }
     </script>
 </body>
