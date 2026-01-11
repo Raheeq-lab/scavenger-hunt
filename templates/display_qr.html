@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>QR Code - {{ hunt.name }}</title>
+    <title>QR Code - {{ hunt.name if hunt else 'Unknown Hunt' }}</title>
     <style>
         * {
             margin: 0;
@@ -351,9 +351,9 @@
                 Scavenger Hunt
                 <span>🔍</span>
             </div>
-            <div class="hunt-title">{{ hunt.name }}</div>
+            <div class="hunt-title">{{ hunt.name if hunt else 'Unknown Hunt' }}</div>
             <div class="question-info">
-                Question {{ question.question_order }} • {{ question.question_type|title }}
+                Question {{ question.question_order if question else '0' }} • {{ (question.question_type|title if question and question.question_type else 'Text') }}
             </div>
         </div>
         
@@ -368,7 +368,7 @@
                     <div style="text-align: center;">
                         <strong>QR Code URL:</strong>
                         <div style="word-break: break-all; font-size: 0.8em; margin-top: 10px;">
-                            {{ qr_url }}
+                            {{ qr_url if qr_url else 'No URL available' }}
                         </div>
                     </div>
                 </div>
@@ -384,7 +384,7 @@
                 
                 <!-- QR Code Text Representation -->
                 <div class="qr-text" id="qrText">
-                    {{ qr_text }}
+                    {{ qr_text if qr_text else 'No QR text available' }}
                 </div>
                 
                 <div style="margin-top: 20px; color: #666; font-size: 0.9em;">
@@ -405,23 +405,37 @@
                         <span>❓</span>
                         Question Text
                     </div>
-                    <div class="info-value">{{ question.text }}</div>
+                    <div class="info-value">{{ question.text if question and question.text else 'No question text available' }}</div>
                 </div>
                 
-                {% if question.question_type == 'multiple-choice' and question.choices %}
+                {% if question and question.question_type == 'multiple-choice' and question.choices %}
                 <div class="info-item">
                     <div class="info-label">
                         <span>🔘</span>
                         Choices
                     </div>
                     <div class="info-value">
-                        {% set choices = question.choices|fromjson %}
                         <ol style="margin-left: 20px;">
-                            {% for choice in choices %}
-                                {% if choice %}
-                                <li>{{ choice }}</li>
-                                {% endif %}
-                            {% endfor %}
+                            {% if question.choices is string %}
+                                {# Try to parse the choices string #}
+                                {% set raw_choices = question.choices %}
+                                {% set clean_choices = raw_choices.replace('[', '').replace(']', '').replace('"', '').replace("'", "") %}
+                                {% set choice_list = clean_choices.split(',') %}
+                                {% for choice in choice_list %}
+                                    {% if choice and choice.strip() %}
+                                    <li>{{ choice.strip() }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            {% elif question.choices is iterable %}
+                                {# If it's already a list/tuple #}
+                                {% for choice in question.choices %}
+                                    {% if choice %}
+                                    <li>{{ choice }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <li>No choices available</li>
+                            {% endif %}
                         </ol>
                     </div>
                 </div>
@@ -433,15 +447,17 @@
                         Correct Answer
                     </div>
                     <div class="info-value">
-                        {% if question.question_type == 'image' %}
+                        {% if question and question.question_type == 'image' %}
                         <em>Image upload required</em>
-                        {% else %}
+                        {% elif question and question.correct_answer %}
                         {{ question.correct_answer }}
+                        {% else %}
+                        <em>No answer set</em>
                         {% endif %}
                     </div>
                 </div>
                 
-                {% if question.hint %}
+                {% if question and question.hint %}
                 <div class="info-item">
                     <div class="info-label">
                         <span>💡</span>
@@ -451,7 +467,7 @@
                 </div>
                 {% endif %}
                 
-                {% if question.next_location_hint %}
+                {% if question and question.next_location_hint %}
                 <div class="info-item">
                     <div class="info-label">
                         <span>📍</span>
@@ -466,7 +482,7 @@
                         <span>⭐</span>
                         Points
                     </div>
-                    <div class="info-value">{{ question.points }} points</div>
+                    <div class="info-value">{{ question.points if question else 0 }} points</div>
                 </div>
                 
                 <!-- URL Box for Copying -->
@@ -475,7 +491,7 @@
                         <span>🔗</span>
                         Direct URL
                     </div>
-                    <div class="url-box" id="urlToCopy">{{ qr_url }}</div>
+                    <div class="url-box" id="urlToCopy">{{ qr_url if qr_url else 'No URL available' }}</div>
                     <button class="copy-btn" onclick="copyURL()">
                         📋 Copy URL
                     </button>
@@ -503,27 +519,42 @@
         <!-- Download & Test Section -->
         <div class="download-section">
             <div class="button-group">
+                {% if hunt %}
                 <a href="/teacher/hunt/{{ hunt.id }}/view" class="btn btn-secondary">
                     ← Back to Hunt
                 </a>
+                {% endif %}
                 <a href="/teacher/dashboard" class="btn btn-secondary">
                     ← Dashboard
                 </a>
+                {% if qr_url and qr_url != '#' %}
                 <a href="{{ qr_url }}" target="_blank" class="btn">
                     🧪 Test Student View
                 </a>
+                {% endif %}
             </div>
             
+            {% if qr_url and qr_url != '#' and qr_url != 'No URL available' %}
             <a href="{{ qr_url }}" target="_blank" class="test-link">
-                🔗 Direct Test Link: {{ qr_url|truncate(50) }}
+                🔗 Direct Test Link: {{ qr_url[:50] }}{% if qr_url|length > 50 %}...{% endif %}
             </a>
+            {% endif %}
         </div>
     </div>
     
     <script>
+        // Ensure variables exist in JavaScript context
+        window.huntName = "{{ hunt.name if hunt else 'Unknown Hunt' }}";
+        window.questionOrder = "{{ question.question_order if question else '0' }}";
+        
         // Copy URL to clipboard
         function copyURL() {
             const urlText = document.getElementById('urlToCopy').textContent;
+            if (!urlText || urlText === 'No URL available') {
+                alert('No URL available to copy');
+                return;
+            }
+            
             navigator.clipboard.writeText(urlText).then(() => {
                 const successElement = document.getElementById('copySuccess');
                 successElement.style.display = 'inline';
@@ -532,67 +563,86 @@
                 }, 2000);
             }).catch(err => {
                 console.error('Failed to copy: ', err);
-                alert('Failed to copy URL. Please select and copy manually.');
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = urlText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const successElement = document.getElementById('copySuccess');
+                    successElement.style.display = 'inline';
+                    setTimeout(() => {
+                        successElement.style.display = 'none';
+                    }, 2000);
+                } catch (err) {
+                    alert('Failed to copy URL. Please select and copy manually.');
+                }
+                document.body.removeChild(textArea);
             });
         }
         
         // Generate QR Code using external service
         function generateQRCode() {
             const url = document.getElementById('urlToCopy').textContent;
+            if (!url || url === 'No URL available') {
+                alert('No URL available to generate QR code');
+                return;
+            }
+            
             const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
             
-            // Open in new window
+            // Create a safe filename
+            const huntName = "{{ hunt.name if hunt else 'unknown-hunt' }}";
+            const safeHuntName = huntName.toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')  // Remove special characters
+                .replace(/\s+/g, '-')          // Replace spaces with hyphens
+                .replace(/^-+|-+$/g, '');      // Remove leading/trailing hyphens
+            
+            const questionNum = "{{ question.question_order if question else '0' }}";
+            const filename = `qr-code-${safeHuntName}-q${questionNum}.png`;
+            
+            // Show loading note
+            showQRGenerationNote();
+            
+            // Try to open in new window first
             const newWindow = window.open(qrCodeUrl, '_blank');
             if (!newWindow) {
-                alert('Please allow pop-ups to generate QR code image');
+                // If popup blocked, offer download instead
+                setTimeout(() => {
+                    const link = document.createElement('a');
+                    link.href = qrCodeUrl;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Show alternative message
+                    const note = document.createElement('div');
+                    note.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: #2196F3;
+                        color: white;
+                        padding: 15px;
+                        border-radius: 8px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+                        z-index: 1000;
+                        animation: slideIn 0.3s ease;
+                    `;
+                    note.textContent = 'QR code download started...';
+                    document.body.appendChild(note);
+                    
+                    setTimeout(() => {
+                        note.style.animation = 'slideOut 0.3s ease';
+                        setTimeout(() => note.remove(), 300);
+                    }, 3000);
+                }, 100);
             }
-            
-            // Alternative: Download the image
-            // const link = document.createElement('a');
-            // link.href = qrCodeUrl;
-            // link.download = `qr-code-{{ hunt.name|slugify }}-q{{ question.question_order }}.png`;
-            // link.click();
         }
         
-        // Auto-select QR text for easy copying
-        document.addEventListener('DOMContentLoaded', function() {
-            // Make QR text selectable on click
-            const qrText = document.getElementById('qrText');
-            qrText.addEventListener('click', function() {
-                const range = document.createRange();
-                range.selectNodeContents(qrText);
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(range);
-            });
-            
-            // Add print message
-            window.addEventListener('beforeprint', function() {
-                console.log('Printing QR code for {{ hunt.name }} - Question {{ question.question_order }}');
-            });
-            
-            // Test QR code functionality
-            console.log('QR Code URL:', '{{ qr_url }}');
-            console.log('Question:', '{{ question.text|truncate(50) }}');
-        });
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            // Ctrl/Cmd + P for print
-            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
-                e.preventDefault();
-                window.print();
-            }
-            // Ctrl/Cmd + C for copy URL
-            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-                const activeElement = document.activeElement;
-                if (!activeElement || activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA') {
-                    copyURL();
-                }
-            }
-        });
-        
-        // Add QR code generation note
+        // Show QR generation note
         function showQRGenerationNote() {
             const note = document.createElement('div');
             note.style.cssText = `
@@ -607,14 +657,79 @@
                 z-index: 1000;
                 animation: slideIn 0.3s ease;
             `;
-            note.textContent = 'Opening QR code generator...';
+            note.textContent = 'Generating QR code...';
+            note.id = 'qrNote';
             document.body.appendChild(note);
             
             setTimeout(() => {
-                note.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => note.remove(), 300);
+                const noteElement = document.getElementById('qrNote');
+                if (noteElement) {
+                    noteElement.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => {
+                        if (noteElement.parentNode) {
+                            noteElement.remove();
+                        }
+                    }, 300);
+                }
             }, 3000);
         }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if required data is available
+            if (!window.huntName || window.huntName === "None") {
+                console.warn('Hunt name not available');
+            }
+            
+            if (!window.questionOrder || window.questionOrder === "None") {
+                console.warn('Question order not available');
+            }
+            
+            // Make QR text selectable on click
+            const qrText = document.getElementById('qrText');
+            if (qrText) {
+                qrText.addEventListener('click', function() {
+                    const range = document.createRange();
+                    range.selectNodeContents(qrText);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                });
+                
+                // Add title for clarity
+                qrText.title = "Click to select all text";
+            }
+            
+            // Add print message
+            window.addEventListener('beforeprint', function() {
+                console.log('Printing QR code for', window.huntName, '- Question', window.questionOrder);
+            });
+            
+            // Log for debugging
+            console.log('QR Code page loaded');
+            console.log('Hunt:', window.huntName);
+            console.log('Question:', "{{ question.text[:50] if question and question.text else 'No question' }}");
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + P for print
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+            // Ctrl/Cmd + C for copy URL (only if not in input/textarea)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                const activeElement = document.activeElement;
+                if (!activeElement || (activeElement.tagName !== 'INPUT' && activeElement.tagName !== 'TEXTAREA')) {
+                    const urlBox = document.getElementById('urlToCopy');
+                    if (urlBox && urlBox.textContent && urlBox.textContent !== 'No URL available') {
+                        copyURL();
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
         
         // Add CSS animations
         const style = document.createElement('style');
