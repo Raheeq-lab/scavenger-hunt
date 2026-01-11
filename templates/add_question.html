@@ -380,7 +380,40 @@
             margin-top: 5px;
         }
         
-        /* Responsive */
+        /* Improved validation styles */
+        .validation-error {
+            color: #ff4444;
+            font-size: 0.85em;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .input-error {
+            border-color: #ff4444 !important;
+            background-color: #fff5f5;
+        }
+        
+        .input-success {
+            border-color: #4CAF50 !important;
+            background-color: #f8fff8;
+        }
+        
+        .char-count {
+            text-align: right;
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 3px;
+        }
+        
+        .char-count.warning {
+            color: #ff9800;
+        }
+        
+        .char-count.error {
+            color: #ff4444;
+        }
+        
+        /* Improved responsive design */
         @media (max-width: 768px) {
             .container {
                 padding: 0 15px;
@@ -399,10 +432,49 @@
             .form-actions {
                 flex-direction: column;
                 gap: 15px;
+                align-items: stretch;
             }
             
             .question-type-options {
                 flex-direction: column;
+            }
+            
+            .points-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            
+            .points-input {
+                width: 100%;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .navbar {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-links {
+                width: 100%;
+                justify-content: space-around;
+            }
+            
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 0.9em;
             }
         }
     </style>
@@ -460,7 +532,7 @@
         
         <form id="addQuestionForm" method="POST" action="/teacher/hunt/{{ hunt.id }}/add-question">
             <div class="form-container">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- CSRF token removed here -->
                 
                 <!-- Question Type Selection -->
                 <div class="form-section">
@@ -498,8 +570,12 @@
                             Question Text <span class="required">*</span>
                         </label>
                         <textarea id="questionText" name="text" class="form-textarea" 
-                                  placeholder="Enter your question here..." required></textarea>
+                                  placeholder="Enter your question here..." required
+                                  maxlength="500"
+                                  oninput="updateCharCount(this, 'questionCharCount')"></textarea>
+                        <div class="char-count" id="questionCharCount">500 characters remaining</div>
                         <div class="form-help">Be clear and specific about what you're asking</div>
+                        <div class="validation-error" id="questionTextError"></div>
                     </div>
                     
                     <!-- Multiple Choice Options (Hidden by default) -->
@@ -510,25 +586,33 @@
                             <div class="choice-input-group">
                                 <label class="choice-label">Choice A <span class="required">*</span></label>
                                 <input type="text" class="choice-input" name="choice1" 
-                                       placeholder="Enter first choice" id="choice1">
+                                       placeholder="Enter first choice" id="choice1"
+                                       maxlength="200"
+                                       oninput="validateChoice(this)">
+                                <div class="validation-error" id="choice1Error"></div>
                             </div>
                             
                             <div class="choice-input-group">
                                 <label class="choice-label">Choice B <span class="required">*</span></label>
                                 <input type="text" class="choice-input" name="choice2" 
-                                       placeholder="Enter second choice" id="choice2">
+                                       placeholder="Enter second choice" id="choice2"
+                                       maxlength="200"
+                                       oninput="validateChoice(this)">
+                                <div class="validation-error" id="choice2Error"></div>
                             </div>
                             
                             <div class="choice-input-group">
                                 <label class="choice-label">Choice C (Optional)</label>
                                 <input type="text" class="choice-input" name="choice3" 
-                                       placeholder="Enter third choice" id="choice3">
+                                       placeholder="Enter third choice" id="choice3"
+                                       maxlength="200">
                             </div>
                             
                             <div class="choice-input-group">
                                 <label class="choice-label">Choice D (Optional)</label>
                                 <input type="text" class="choice-input" name="choice4" 
-                                       placeholder="Enter fourth choice" id="choice4">
+                                       placeholder="Enter fourth choice" id="choice4"
+                                       maxlength="200">
                             </div>
                             
                             <div class="form-help">
@@ -547,10 +631,13 @@
                             Correct Answer <span class="required">*</span>
                         </label>
                         <input type="text" id="correctAnswer" name="correct_answer" class="form-input" 
-                               placeholder="Enter the correct answer" required>
+                               placeholder="Enter the correct answer" required
+                               maxlength="200"
+                               oninput="validateAnswer(this)">
                         <div class="form-help" id="answerHelp">
                             For text questions, enter the exact answer text (case-insensitive)
                         </div>
+                        <div class="validation-error" id="correctAnswerError"></div>
                     </div>
                     
                     <div class="form-group">
@@ -573,14 +660,16 @@
                     <div class="form-group">
                         <label for="hint" class="form-label">Hint for This Question (Optional)</label>
                         <input type="text" id="hint" name="hint" class="form-input" 
-                               placeholder="e.g., Check the plaque on the wall">
+                               placeholder="e.g., Check the plaque on the wall"
+                               maxlength="200">
                         <div class="form-help">Displayed if student answers incorrectly</div>
                     </div>
                     
                     <div class="form-group">
                         <label for="nextLocationHint" class="form-label">Next Location Hint (Optional)</label>
                         <input type="text" id="nextLocationHint" name="next_location_hint" class="form-input" 
-                               placeholder="e.g., The next QR code is near the library entrance">
+                               placeholder="e.g., The next QR code is near the library entrance"
+                               maxlength="200">
                         <div class="form-help">Displayed when student answers correctly</div>
                     </div>
                 </div>
@@ -610,17 +699,22 @@
         // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
             updatePointsDisplay();
-            addCsrfMetaTag();
             
             // Add form validation
             const form = document.getElementById('addQuestionForm');
             form.addEventListener('submit', function(e) {
-                if (!validateForm()) {
-                    e.preventDefault();
-                    return false;
+                e.preventDefault();
+                if (validateForm()) {
+                    showLoading();
+                    // Submit the form after validation passes
+                    setTimeout(() => {
+                        form.submit();
+                    }, 100);
                 }
-                showLoading();
             });
+            
+            // Initialize character counts
+            updateCharCount(document.getElementById('questionText'), 'questionCharCount');
         });
         
         function selectQuestionType(type) {
@@ -643,6 +737,12 @@
                 document.getElementById('answerLabel').innerHTML = 'Correct Choice <span class="required">*</span>';
                 document.getElementById('answerHelp').textContent = 'Enter the exact text of the correct choice (e.g., "Choice A")';
                 document.getElementById('correctAnswer').placeholder = 'Enter the exact choice text';
+                
+                // Validate choices when showing
+                setTimeout(() => {
+                    validateChoice(document.getElementById('choice1'));
+                    validateChoice(document.getElementById('choice2'));
+                }, 100);
             } else {
                 choiceOptions.style.display = 'none';
                 if (type === 'image') {
@@ -651,14 +751,19 @@
                     document.getElementById('correctAnswer').placeholder = 'Any image upload is accepted';
                     document.getElementById('correctAnswer').value = 'image_accepted';
                     document.getElementById('correctAnswer').readOnly = true;
+                    document.getElementById('correctAnswer').classList.add('input-success');
                 } else {
                     document.getElementById('answerLabel').innerHTML = 'Correct Answer <span class="required">*</span>';
                     document.getElementById('answerHelp').textContent = 'For text questions, enter the exact answer text (case-insensitive)';
                     document.getElementById('correctAnswer').placeholder = 'Enter the correct answer';
                     document.getElementById('correctAnswer').value = '';
                     document.getElementById('correctAnswer').readOnly = false;
+                    document.getElementById('correctAnswer').classList.remove('input-success');
                 }
             }
+            
+            // Clear validation errors when switching types
+            clearValidationErrors();
         }
         
         function updatePointsValue(value) {
@@ -672,21 +777,116 @@
             document.querySelector('.points-slider').value = points;
         }
         
-        function validateForm() {
-            const questionText = document.getElementById('questionText').value.trim();
-            const correctAnswer = document.getElementById('correctAnswer').value.trim();
+        function updateCharCount(textarea, counterId) {
+            const maxLength = textarea.getAttribute('maxlength');
+            const currentLength = textarea.value.length;
+            const remaining = maxLength - currentLength;
+            const counter = document.getElementById(counterId);
             
-            // Validate required fields
-            if (!questionText) {
-                alert('Please enter the question text');
-                document.getElementById('questionText').focus();
-                return false;
+            counter.textContent = `${remaining} characters remaining`;
+            counter.classList.remove('warning', 'error');
+            
+            if (remaining <= 50) {
+                counter.classList.add('warning');
+            }
+            if (remaining <= 10) {
+                counter.classList.add('error');
             }
             
-            if (currentQuestionType !== 'image' && !correctAnswer) {
-                alert('Please enter the correct answer');
-                document.getElementById('correctAnswer').focus();
+            // Update input styling
+            if (currentLength === 0) {
+                textarea.classList.remove('input-success', 'input-error');
+            } else if (currentLength > 0 && remaining > 10) {
+                textarea.classList.remove('input-error');
+                textarea.classList.add('input-success');
+            } else if (remaining <= 10) {
+                textarea.classList.remove('input-success');
+                textarea.classList.add('input-error');
+            }
+        }
+        
+        function validateChoice(input) {
+            const value = input.value.trim();
+            const errorElement = document.getElementById(input.id + 'Error');
+            
+            if (!value && (input.id === 'choice1' || input.id === 'choice2')) {
+                showError(input, errorElement, 'This choice is required');
                 return false;
+            } else if (value && value.length > 200) {
+                showError(input, errorElement, 'Choice must be 200 characters or less');
+                return false;
+            } else {
+                clearError(input, errorElement);
+                return true;
+            }
+        }
+        
+        function validateAnswer(input) {
+            const value = input.value.trim();
+            const errorElement = document.getElementById('correctAnswerError');
+            
+            if (!value && currentQuestionType !== 'image') {
+                showError(input, errorElement, 'Correct answer is required');
+                return false;
+            } else if (value && value.length > 200) {
+                showError(input, errorElement, 'Answer must be 200 characters or less');
+                return false;
+            } else {
+                clearError(input, errorElement);
+                return true;
+            }
+        }
+        
+        function showError(input, errorElement, message) {
+            input.classList.add('input-error');
+            input.classList.remove('input-success');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+        
+        function clearError(input, errorElement) {
+            input.classList.remove('input-error');
+            input.classList.add('input-success');
+            errorElement.style.display = 'none';
+        }
+        
+        function clearValidationErrors() {
+            document.querySelectorAll('.validation-error').forEach(el => {
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('.input-error').forEach(el => {
+                el.classList.remove('input-error');
+            });
+        }
+        
+        function validateForm() {
+            let isValid = true;
+            
+            // Clear all errors first
+            clearValidationErrors();
+            
+            // Validate question text
+            const questionText = document.getElementById('questionText').value.trim();
+            const questionTextError = document.getElementById('questionTextError');
+            if (!questionText) {
+                showError(document.getElementById('questionText'), questionTextError, 'Question text is required');
+                document.getElementById('questionText').focus();
+                isValid = false;
+            } else if (questionText.length > 500) {
+                showError(document.getElementById('questionText'), questionTextError, 'Question must be 500 characters or less');
+                document.getElementById('questionText').focus();
+                isValid = false;
+            }
+            
+            // Validate correct answer
+            const correctAnswer = document.getElementById('correctAnswer').value.trim();
+            if (currentQuestionType !== 'image' && !correctAnswer) {
+                const errorElement = document.getElementById('correctAnswerError');
+                showError(document.getElementById('correctAnswer'), errorElement, 'Correct answer is required');
+                if (isValid) {
+                    document.getElementById('correctAnswer').focus();
+                    isValid = false;
+                }
             }
             
             // Validate multiple choice options
@@ -694,29 +894,44 @@
                 const choice1 = document.getElementById('choice1').value.trim();
                 const choice2 = document.getElementById('choice2').value.trim();
                 
-                if (!choice1 || !choice2) {
-                    alert('Please enter at least two choices for multiple choice');
-                    if (!choice1) document.getElementById('choice1').focus();
-                    else document.getElementById('choice2').focus();
-                    return false;
+                if (!validateChoice(document.getElementById('choice1')) || 
+                    !validateChoice(document.getElementById('choice2'))) {
+                    if (isValid) {
+                        if (!choice1) document.getElementById('choice1').focus();
+                        else if (!choice2) document.getElementById('choice2').focus();
+                        isValid = false;
+                    }
                 }
                 
                 // Check if correct answer matches one of the choices
-                const choices = [
-                    choice1,
-                    choice2,
-                    document.getElementById('choice3').value.trim(),
-                    document.getElementById('choice4').value.trim()
-                ].filter(choice => choice);
-                
-                if (!choices.includes(correctAnswer)) {
-                    alert('Correct answer must match one of the choices you entered');
-                    document.getElementById('correctAnswer').focus();
-                    return false;
+                if (isValid && correctAnswer) {
+                    const choices = [
+                        choice1,
+                        choice2,
+                        document.getElementById('choice3').value.trim(),
+                        document.getElementById('choice4').value.trim()
+                    ].filter(choice => choice);
+                    
+                    if (!choices.includes(correctAnswer)) {
+                        const errorElement = document.getElementById('correctAnswerError');
+                        showError(document.getElementById('correctAnswer'), errorElement, 'Correct answer must match one of the choices');
+                        if (isValid) {
+                            document.getElementById('correctAnswer').focus();
+                            isValid = false;
+                        }
+                    }
                 }
             }
             
-            return true;
+            // Validate points
+            const points = parseInt(document.getElementById('points').value);
+            if (isNaN(points) || points < 1 || points > 100) {
+                alert('Please enter valid points between 1 and 100');
+                document.getElementById('points').focus();
+                isValid = false;
+            }
+            
+            return isValid;
         }
         
         function showLoading() {
@@ -735,15 +950,6 @@
             }, 10000);
         }
         
-        function addCsrfMetaTag() {
-            if (!document.querySelector('meta[name="csrf-token"]')) {
-                const csrfMeta = document.createElement('meta');
-                csrfMeta.name = 'csrf-token';
-                csrfMeta.content = '{{ csrf_token() }}';
-                document.head.appendChild(csrfMeta);
-            }
-        }
-        
         // Points slider sync
         document.getElementById('points').addEventListener('input', function() {
             updatePointsDisplay();
@@ -755,6 +961,7 @@
                 // Set a default value for image questions
                 setTimeout(() => {
                     document.getElementById('correctAnswer').value = 'image_accepted';
+                    document.getElementById('correctAnswer').classList.add('input-success');
                 }, 100);
             }
         });
@@ -764,8 +971,30 @@
             option.addEventListener('click', function() {
                 if (currentQuestionType === 'image') {
                     document.getElementById('correctAnswer').value = '';
+                    document.getElementById('correctAnswer').classList.remove('input-success');
                 }
             });
+        });
+        
+        // Real-time validation
+        document.getElementById('questionText').addEventListener('input', function() {
+            updateCharCount(this, 'questionCharCount');
+        });
+        
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+Enter to submit form
+            if (e.ctrlKey && e.key === 'Enter') {
+                const submitBtn = document.getElementById('submitBtn');
+                if (!submitBtn.disabled) {
+                    submitBtn.click();
+                }
+            }
+            
+            // Escape to go back
+            if (e.key === 'Escape') {
+                window.location.href = '/teacher/hunt/{{ hunt.id }}/view';
+            }
         });
     </script>
 </body>
