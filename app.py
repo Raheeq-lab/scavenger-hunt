@@ -385,7 +385,7 @@ def delete_hunt(hunt_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route("/teacher/hunt/<int:hunt_id>/edit")
+@app.route("/teacher/hunt/<int:hunt_id>/edit", methods=['GET', 'POST'])
 def edit_hunt(hunt_id):
     if 'user_type' not in session or session['user_type'] != 'teacher':
         return redirect(url_for('teacher_login'))
@@ -395,9 +395,63 @@ def edit_hunt(hunt_id):
         flash('Access denied', 'danger')
         return redirect(url_for('teacher_dashboard'))
     
-    # For now, redirect to view page
-    flash('Edit functionality coming soon!', 'info')
-    return redirect(url_for('view_hunt', hunt_id=hunt_id))
+    if request.method == 'POST':
+        hunt.name = request.form['name']
+        hunt.description = request.form.get('description', '')
+
+        db.session.commit()
+        flash('Hunt updated successfully!', 'success')
+        return redirect(url_for('view_hunt', hunt_id=hunt.id))
+
+    return render_template('edit_hunt.html', hunt=hunt)
+
+
+@app.route("/teacher/question/<int:question_id>/edit", methods=['GET', 'POST'])
+def edit_question(question_id):
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return redirect(url_for('teacher_login'))
+
+    question = Question.query.get_or_404(question_id)
+    hunt = Hunt.query.get(question.hunt_id)
+
+    if hunt.teacher_id != session['user_id']:
+        flash('Access denied', 'danger')
+        return redirect(url_for('teacher_dashboard'))
+
+    if request.method == 'POST':
+        question.question_type = request.form['question_type']
+        question.text = request.form['text']
+        question.correct_answer = request.form['correct_answer']
+        question.hint = request.form.get('hint', '')
+        question.next_location_hint = request.form.get('next_location_hint', '')
+        question.points = int(request.form.get('points', 10))
+
+        # Process choices for multiple-choice
+        if question.question_type == 'multiple-choice':
+            choices = [
+                request.form.get('choice1', ''),
+                request.form.get('choice2', ''),
+                request.form.get('choice3', ''),
+                request.form.get('choice4', '')
+            ]
+            question.choices = json.dumps(choices)
+        else:
+            question.choices = ''
+
+        db.session.commit()
+        flash('Question updated successfully!', 'success')
+        return redirect(url_for('view_hunt', hunt_id=hunt.id))
+
+    # Parse choices for multiple-choice
+    choices = []
+    if question.choices:
+        try:
+            choices = json.loads(question.choices)
+        except:
+            choices = []
+
+    return render_template('edit_question.html', question=question, hunt=hunt, choices=choices)
+
 
 # Student Routes
 @app.route("/student/dashboard")
