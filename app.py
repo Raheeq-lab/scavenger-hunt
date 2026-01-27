@@ -233,7 +233,7 @@ def create_hunt_with_questions():
             question = Question(
                 hunt_id=hunt.id,
                 question_order=i,
-                question_type='multiple-choice' if question_type == 'multiple-choice' else 'text',
+                question_type=question_type,
                 text=text,
                 choices=json.dumps(choices) if choices else '',
                 correct_answer=correct_answer,
@@ -601,7 +601,7 @@ def submit_answer():
     # Check answer
     is_correct = False
     if question.question_type == 'multiple-choice':
-        is_correct = answer.strip() == question.correct_answer.strip()
+        is_correct = answer.lower().strip() == question.correct_answer.lower().strip()
     elif question.question_type == 'text':
         is_correct = answer.lower().strip() == question.correct_answer.lower().strip()
     elif question.question_type == 'image':
@@ -609,9 +609,9 @@ def submit_answer():
         is_correct = True
     
     # Update progress
-    if qr_token not in progress['completed_questions']:
-        progress['completed_questions'].append(qr_token)
-        if is_correct:
+    if is_correct:
+        if qr_token not in progress['completed_questions']:
+            progress['completed_questions'].append(qr_token)
             progress['score'] += question.points
             progress['current_question'] = question.question_order + 1
     
