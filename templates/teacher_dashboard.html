@@ -214,6 +214,16 @@
         .btn-view:hover {
             background: #e1bee7;
         }
+
+        .btn-edit {
+            background: #fff3e0;
+            color: #ff9800;
+            border: 1px solid #ffe0b2;
+        }
+
+        .btn-edit:hover {
+            background: #ffe0b2;
+        }
         
         .btn-toggle {
             background: #c8e6c9;
@@ -449,6 +459,7 @@
                     <div class="card-actions">
                         <a href="/teacher/hunt/{{ hunt.id }}/add-question" class="action-btn btn-add">➕ Add Question</a>
                         <a href="/teacher/hunt/{{ hunt.id }}/view" class="action-btn btn-view">👁️ View</a>
+                        <a href="/teacher/hunt/{{ hunt.id }}/edit" class="action-btn btn-edit">✏️ Edit</a>
                         <button class="action-btn {% if hunt.is_active %}btn-delete{% else %}btn-toggle{% endif %}" 
                                 onclick="toggleHuntActive('{{ hunt.id }}', '{{ hunt.name }}', this)">
                             {% if hunt.is_active %}⏸️ Deactivate{% else %}▶️ Activate{% endif %}

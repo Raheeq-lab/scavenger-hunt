@@ -8,7 +8,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -19,7 +19,7 @@
             padding: 20px;
             color: #333;
         }
-        
+
         .error-container {
             background: white;
             border-radius: 20px;
@@ -31,21 +31,21 @@
             border-top: 8px solid #ff4444;
             animation: fadeIn 0.5s ease;
         }
-        
+
         .error-icon {
             font-size: 5em;
             margin-bottom: 30px;
             color: #ff4444;
             animation: bounce 1s infinite alternate;
         }
-        
+
         .error-title {
             font-size: 2.5em;
             color: #333;
             margin-bottom: 20px;
             font-weight: bold;
         }
-        
+
         .error-message {
             font-size: 1.2em;
             color: #666;
@@ -53,7 +53,7 @@
             line-height: 1.6;
             padding: 0 20px;
         }
-        
+
         .error-details {
             background: #f8f9fa;
             padding: 20px;
@@ -62,7 +62,7 @@
             text-align: left;
             border-left: 4px solid #ff4444;
         }
-        
+
         .error-details-title {
             font-weight: bold;
             color: #555;
@@ -71,14 +71,14 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         .error-details-text {
             color: #666;
             font-family: 'Courier New', monospace;
             font-size: 0.95em;
             word-break: break-word;
         }
-        
+
         .action-buttons {
             display: flex;
             gap: 15px;
@@ -86,7 +86,7 @@
             flex-wrap: wrap;
             margin-top: 40px;
         }
-        
+
         .btn {
             padding: 15px 30px;
             border: none;
@@ -102,38 +102,38 @@
             min-width: 180px;
             justify-content: center;
         }
-        
+
         .btn-primary {
             background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
             color: white;
         }
-        
+
         .btn-primary:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
         }
-        
+
         .btn-secondary {
             background: #f5f5f5;
             color: #666;
             border: 1px solid #ddd;
         }
-        
+
         .btn-secondary:hover {
             background: #e0e0e0;
             transform: translateY(-3px);
         }
-        
+
         .btn-report {
             background: linear-gradient(135-gradient: 135deg, #2196F3 0%, #0D47A1 100%);
             color: white;
         }
-        
+
         .btn-report:hover {
             transform: translateY(-3px);
             box-shadow: 0 10px 20px rgba(33, 150, 243, 0.3);
         }
-        
+
         .error-code {
             background: #333;
             color: white;
@@ -144,14 +144,14 @@
             display: inline-block;
             margin-top: 10px;
         }
-        
+
         .technical-info {
             margin-top: 40px;
             padding-top: 20px;
             border-top: 1px solid #eee;
             text-align: left;
         }
-        
+
         .technical-toggle {
             background: #f8f9fa;
             border: none;
@@ -165,7 +165,7 @@
             gap: 10px;
             margin: 0 auto;
         }
-        
+
         .technical-content {
             background: #f8f9fa;
             padding: 20px;
@@ -177,17 +177,17 @@
             display: none;
             overflow-x: auto;
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
+
         @keyframes bounce {
             from { transform: translateY(0); }
             to { transform: translateY(-10px); }
         }
-        
+
         .help-section {
             background: #e8f5e8;
             padding: 25px;
@@ -196,7 +196,7 @@
             text-align: left;
             border-left: 5px solid #4CAF50;
         }
-        
+
         .help-title {
             font-size: 1.2em;
             color: #2E7D32;
@@ -205,18 +205,18 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         .help-list {
             list-style-type: none;
             padding-left: 0;
         }
-        
+
         .help-list li {
             margin-bottom: 10px;
             padding-left: 25px;
             position: relative;
         }
-        
+
         .help-list li:before {
             content: "•";
             color: #4CAF50;
@@ -224,56 +224,56 @@
             position: absolute;
             left: 10px;
         }
-        
+
         .footer {
             margin-top: 40px;
             color: #999;
             font-size: 0.9em;
         }
-        
+
         /* Different error types */
         .error-type-404 .error-icon {
             color: #FF9800;
         }
-        
+
         .error-type-404 .error-container {
             border-color: #FF9800;
         }
-        
+
         .error-type-500 .error-icon {
             color: #ff4444;
         }
-        
+
         .error-type-500 .error-container {
             border-color: #ff4444;
         }
-        
+
         .error-type-access .error-icon {
             color: #9C27B0;
         }
-        
+
         .error-type-access .error-container {
             border-color: #9C27B0;
         }
-        
+
         /* Responsive */
         @media (max-width: 768px) {
             .error-container {
                 padding: 30px 20px;
             }
-            
+
             .error-icon {
                 font-size: 4em;
             }
-            
+
             .error-title {
                 font-size: 2em;
             }
-            
+
             .action-buttons {
                 flex-direction: column;
             }
-            
+
             .btn {
                 width: 100%;
             }
@@ -301,11 +301,11 @@
             ⚠️
             {% endif %}
         </div>
-        
+
         <h1 class="error-title">
             {{ message if message else 'An Error Occurred' }}
         </h1>
-        
+
         <div class="error-message">
             {% if message %}
                 {% if message == 'Page Not Found' %}
@@ -327,7 +327,7 @@
             An unexpected error occurred. Please try again.
             {% endif %}
         </div>
-        
+
         {% if details %}
         <div class="error-details">
             <div class="error-details-title">
@@ -337,7 +337,7 @@
             <div class="error-details-text">{{ details }}</div>
         </div>
         {% endif %}
-        
+
         <!-- Action Buttons -->
         <div class="action-buttons">
             {% if message %}
@@ -397,7 +397,7 @@
             </a>
             {% endif %}
         </div>
-        
+
         <!-- Help Section -->
         <div class="help-section">
             <h3 class="help-title">
@@ -439,7 +439,7 @@
                 {% endif %}
             </ul>
         </div>
-        
+
         <!-- Technical Info (Hidden by default) -->
         <div class="technical-info">
             <button class="technical-toggle" onclick="toggleTechnicalInfo()">
@@ -456,7 +456,7 @@
                 <div style="margin-top: 10px;"><strong>User Agent:</strong> <span id="userAgent"></span></div>
             </div>
         </div>
-        
+
         <!-- Footer -->
         <div class="footer">
             <p>© 2024 Scavenger Hunt Educational Platform</p>
@@ -467,18 +467,18 @@
             </p>
         </div>
     </div>
-    
+
     <script>
         // Set current URL and timestamp
         document.getElementById('currentURL').textContent = window.location.href;
         document.getElementById('timestamp').textContent = new Date().toLocaleString();
         document.getElementById('userAgent').textContent = navigator.userAgent || 'Unknown';
-        
+
         function toggleTechnicalInfo() {
             const content = document.getElementById('technicalContent');
             const button = document.querySelector('.technical-toggle');
             const icon = document.getElementById('techIcon');
-            
+
             if (content.style.display === 'block') {
                 content.style.display = 'none';
                 button.innerHTML = '<span id="techIcon">🔧</span> Show Technical Details';
@@ -489,12 +489,12 @@
                 content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
-        
+
         // Auto-hide technical info on small screens
         if (window.innerWidth < 768) {
             document.getElementById('technicalContent').style.display = 'none';
         }
-        
+
         // Log error to console for debugging
         console.error('Page Error:', {
             message: '{{ message if message else "Unknown" }}',
@@ -502,7 +502,7 @@
             url: window.location.href,
             timestamp: new Date().toISOString()
         });
-        
+
         // Try to reload on certain errors after delay
         if ('{{ message }}' === 'Internal Server Error') {
             setTimeout(() => {
@@ -511,7 +511,7 @@
                 // window.location.reload();
             }, 10000);
         }
-        
+
         // Add keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             // Escape to go back
@@ -528,7 +528,7 @@
                 window.location.reload();
             }
         });
-        
+
         // Add helpful console message
         console.log(
             '%c🚨 Error Page Loaded %c\n' +
@@ -539,13 +539,13 @@
             'color: #ff4444; font-weight: bold; font-size: 14px;',
             'color: #666;'
         );
-        
+
         // Fix for the replace filter in JavaScript - make it safe
         function safeReplace(str, find, replace) {
             if (!str) return '';
             return str.replace(new RegExp(find, 'g'), replace);
         }
-        
+
         // Example usage if needed
         // const errorCode = safeReplace("{{ message if message else '' }}", ' ', '-');
     </script>

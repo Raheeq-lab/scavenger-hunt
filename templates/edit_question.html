@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Question - {{ hunt.name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: #f5f7fa; color: #333; }
+        .navbar { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .logo { font-size: 1.8em; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-link { color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; transition: background 0.3s; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-title { font-size: 2em; color: #333; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; margin-bottom: 20px; padding: 10px 15px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .form-container { background: white; border-radius: 15px; padding: 40px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        .section-title { font-size: 1.3em; color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+        .form-group { margin-bottom: 25px; }
+        .form-label { display: block; margin-bottom: 8px; color: #555; font-weight: bold; font-size: 1.1em; }
+        .form-label .required { color: #ff4444; margin-left: 3px; }
+        .form-input, .form-textarea, .form-select { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; font-family: 'Arial', sans-serif; transition: border-color 0.3s; }
+        .form-input:focus, .form-textarea:focus, .form-select:focus { outline: none; border-color: #4CAF50; }
+        .form-textarea { min-height: 120px; resize: vertical; }
+        .form-help { color: #777; font-size: 0.9em; margin-top: 5px; font-style: italic; }
+        .choice-options { background: #f8f9fa; border-radius: 8px; padding: 20px; margin-top: 15px; border: 1px dashed #ddd; }
+        .choice-input-group { margin-bottom: 15px; }
+        .choice-label { display: block; margin-bottom: 5px; color: #555; font-weight: bold; }
+        .choice-input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; }
+        .points-group { display: flex; align-items: center; gap: 15px; }
+        .points-input { width: 80px; padding: 10px; border: 2px solid #e0e0e0; border-radius: 5px; text-align: center; font-size: 1.1em; }
+        .points-slider { flex: 1; height: 8px; -webkit-appearance: none; background: #e0e0e0; border-radius: 4px; outline: none; }
+        .points-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #4CAF50; border-radius: 50%; cursor: pointer; }
+        .points-display { font-weight: bold; color: #4CAF50; font-size: 1.2em; }
+        .btn { padding: 12px 25px; border: none; border-radius: 8px; font-size: 1em; font-weight: bold; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3); }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .form-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #f0f0f0; }
+        .button-group { display: flex; gap: 15px; }
+        .question-type-options { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .type-option { flex: 1; min-width: 150px; padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; background: white; cursor: pointer; text-align: center; transition: all 0.3s; }
+        .type-option:hover { border-color: #4CAF50; background: #f8fff8; }
+        .type-option.selected { border-color: #4CAF50; background: #e8f5e8; }
+        .type-icon { font-size: 2em; margin-bottom: 10px; }
+        .type-name { font-weight: bold; color: #333; }
+        .type-desc { font-size: 0.8em; color: #666; margin-top: 5px; }
+        .validation-error { color: #ff4444; font-size: 0.85em; margin-top: 5px; display: none; }
+        .input-error { border-color: #ff4444 !important; background-color: #fff5f5; }
+        .input-success { border-color: #4CAF50 !important; background-color: #f8fff8; }
+        .char-count { text-align: right; font-size: 0.8em; color: #888; margin-top: 3px; }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: white; animation: spin 1s ease-in-out infinite; margin-right: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo"><span>🎯</span> Scavenger Hunt</div>
+        <div class="nav-links">
+            <a href="/teacher/dashboard" class="nav-link">Dashboard</a>
+            <a href="/logout" class="nav-link" style="color: white; text-decoration: none;">Logout</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <a href="/teacher/hunt/{{ hunt.id }}/view" class="back-link">← Back to "{{ hunt.name }}"</a>
+
+        <div class="page-header">
+            <h1 class="page-title">Edit Question</h1>
+        </div>
+
+        <form id="editQuestionForm" method="POST">
+            <div class="form-container">
+                <div class="form-section">
+                    <h2 class="section-title">Question Type</h2>
+                    <div class="question-type-options">
+                        <div class="type-option {% if question.question_type == 'text' %}selected{% endif %}" data-type="text" onclick="selectQuestionType('text')">
+                            <div class="type-icon">📝</div>
+                            <div class="type-name">Text Answer</div>
+                            <div class="type-desc">Students type their answer</div>
+                        </div>
+                        <div class="type-option {% if question.question_type == 'multiple-choice' %}selected{% endif %}" data-type="multiple-choice" onclick="selectQuestionType('multiple-choice')">
+                            <div class="type-icon">🔘</div>
+                            <div class="type-name">Multiple Choice</div>
+                            <div class="type-desc">Select from options</div>
+                        </div>
+                        <div class="type-option {% if question.question_type == 'image' %}selected{% endif %}" data-type="image" onclick="selectQuestionType('image')">
+                            <div class="type-icon">📷</div>
+                            <div class="type-name">Image Upload</div>
+                            <div class="type-desc">Upload a photo</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="question_type" name="question_type" value="{{ question.question_type }}">
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">Question Details</h2>
+                    <div class="form-group">
+                        <label for="questionText" class="form-label">Question Text <span class="required">*</span></label>
+                        <textarea id="questionText" name="text" class="form-textarea" required maxlength="500">{{ question.text }}</textarea>
+                        <div class="char-count" id="questionCharCount">500 characters remaining</div>
+                        <div class="validation-error" id="questionTextError"></div>
+                    </div>
+
+                    <div id="choiceOptions" class="choice-options" style="{% if question.question_type != 'multiple-choice' %}display: none;{% endif %}">
+                        <div class="form-group">
+                            <label class="form-label">Multiple Choice Options</label>
+                            {% for i in range(1, 5) %}
+                            <div class="choice-input-group">
+                                <label class="choice-label">Choice {{ ['A', 'B', 'C', 'D'][i-1] }} {% if i <= 2 %}<span class="required">*</span>{% endif %}</label>
+                                <input type="text" class="choice-input" name="choice{{ i }}" id="choice{{ i }}" value="{{ choices[i-1] if choices|length >= i else '' }}" maxlength="200">
+                                <div class="validation-error" id="choice{{ i }}Error"></div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">Answer & Scoring</h2>
+                    <div class="form-group">
+                        <label for="correctAnswer" class="form-label" id="answerLabel">Correct Answer <span class="required">*</span></label>
+                        <input type="text" id="correctAnswer" name="correct_answer" class="form-input" value="{{ question.correct_answer }}" required maxlength="200">
+                        <div class="form-help" id="answerHelp">For text questions, enter the exact answer text</div>
+                        <div class="validation-error" id="correctAnswerError"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="points" class="form-label">Points</label>
+                        <div class="points-group">
+                            <input type="number" id="points" name="points" class="points-input" value="{{ question.points }}" min="1" max="100">
+                            <input type="range" class="points-slider" min="1" max="100" value="{{ question.points }}" oninput="updatePointsValue(this.value)">
+                            <div class="points-display" id="pointsDisplay">{{ question.points }} points</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">Hints & Location Information</h2>
+                    <div class="form-group">
+                        <label for="hint" class="form-label">Hint for This Question (Optional)</label>
+                        <input type="text" id="hint" name="hint" class="form-input" value="{{ question.hint or '' }}" maxlength="200">
+                    </div>
+                    <div class="form-group">
+                        <label for="nextLocationHint" class="form-label">Next Location Hint (Optional)</label>
+                        <input type="text" id="nextLocationHint" name="next_location_hint" class="form-input" value="{{ question.next_location_hint or '' }}" maxlength="200">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/teacher/hunt/{{ hunt.id }}/view'">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let currentQuestionType = '{{ question.question_type }}';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePointsDisplay();
+            updateCharCount(document.getElementById('questionText'), 'questionCharCount');
+
+            const form = document.getElementById('editQuestionForm');
+            form.addEventListener('submit', function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                } else {
+                    showLoading();
+                }
+            });
+        });
+
+        function selectQuestionType(type) {
+            currentQuestionType = type;
+            document.getElementById('question_type').value = type;
+            document.querySelectorAll('.type-option').forEach(option => {
+                option.classList.toggle('selected', option.getAttribute('data-type') === type);
+            });
+
+            const choiceOptions = document.getElementById('choiceOptions');
+            const correctAnswer = document.getElementById('correctAnswer');
+            const answerLabel = document.getElementById('answerLabel');
+            const answerHelp = document.getElementById('answerHelp');
+
+            if (type === 'multiple-choice') {
+                choiceOptions.style.display = 'block';
+                answerLabel.innerHTML = 'Correct Choice <span class="required">*</span>';
+                answerHelp.textContent = 'Enter the exact text of the correct choice';
+                correctAnswer.readOnly = false;
+            } else if (type === 'image') {
+                choiceOptions.style.display = 'none';
+                answerLabel.innerHTML = 'Image Acceptance Note';
+                answerHelp.textContent = 'Any valid image upload is accepted';
+                correctAnswer.value = 'image_accepted';
+                correctAnswer.readOnly = true;
+            } else {
+                choiceOptions.style.display = 'none';
+                answerLabel.innerHTML = 'Correct Answer <span class="required">*</span>';
+                answerHelp.textContent = 'Enter the exact answer text (case-insensitive)';
+                correctAnswer.readOnly = false;
+            }
+        }
+
+        function updatePointsValue(value) {
+            document.getElementById('points').value = value;
+            updatePointsDisplay();
+        }
+
+        function updatePointsDisplay() {
+            const points = document.getElementById('points').value;
+            document.getElementById('pointsDisplay').textContent = points + ' point' + (points == 1 ? '' : 's');
+            document.querySelector('.points-slider').value = points;
+        }
+
+        function updateCharCount(textarea, counterId) {
+            const maxLength = textarea.getAttribute('maxlength');
+            const currentLength = textarea.value.length;
+            document.getElementById(counterId).textContent = `${maxLength - currentLength} characters remaining`;
+        }
+
+        function validateForm() {
+            let isValid = true;
+            const text = document.getElementById('questionText').value.trim();
+            if (!text) {
+                showError('questionText', 'Question text is required');
+                isValid = false;
+            }
+            if (currentQuestionType === 'multiple-choice') {
+                if (!document.getElementById('choice1').value.trim() || !document.getElementById('choice2').value.trim()) {
+                    alert('At least two choices are required');
+                    isValid = false;
+                }
+            }
+            return isValid;
+        }
+
+        function showError(id, msg) {
+            const el = document.getElementById(id + 'Error');
+            el.textContent = msg;
+            el.style.display = 'block';
+            document.getElementById(id).classList.add('input-error');
+        }
+
+        function showLoading() {
+            const btn = document.getElementById('submitBtn');
+            btn.innerHTML = '<span class="loading-spinner"></span>Saving...';
+            btn.disabled = true;
+        }
+
+        document.getElementById('questionText').addEventListener('input', function() {
+            updateCharCount(this, 'questionCharCount');
+        });
+    </script>
+</body>
+</html>

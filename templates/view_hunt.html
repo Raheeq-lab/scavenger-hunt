@@ -61,6 +61,9 @@
         <div class="hunt-header">
             <div class="hunt-title">
                 <span>📋</span> {{ hunt.name }}
+                <a href="{{ url_for('edit_hunt', hunt_id=hunt.id) }}" class="btn btn-secondary" style="margin-left: 20px; padding: 5px 15px; font-size: 0.6em; vertical-align: middle;">
+                    ✏️ Edit Hunt
+                </a>
             </div>
             {% if hunt.description %}
             <div class="hunt-description">
@@ -93,6 +96,7 @@
                             <th>Hint</th>
                             <th>Next Location Hint</th>
                             <th>QR Code</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -107,6 +111,11 @@
                                     View QR Code
                                 </a><br>
                                 <small style="color: #666;">{{ q.qr_url[:30] }}...</small>
+                            </td>
+                            <td style="text-align: center;">
+                                <a href="{{ url_for('edit_question', question_id=q.id) }}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.9em; display: inline-block;">
+                                    ✏️ Edit
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}

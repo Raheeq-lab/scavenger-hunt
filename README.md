@@ -2,6 +2,8 @@
 
 An interactive QR-code based scavenger hunt system for educators and students.
 
+**Live Demo:** [https://scavenger-hunt-1.onrender.com](https://scavenger-hunt-1.onrender.com)
+
 ## Features
 
 ### For Teachers:

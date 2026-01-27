@@ -24,11 +24,11 @@
             <h1>👨‍🎓 Student Dashboard</h1>
             <p>Track your scavenger hunt progress</p>
         </div>
-        
+
         <div class="qr-instruction">
             <strong>📱 How to play:</strong> Scan QR codes at locations to access questions
         </div>
-        
+
         {% if started_hunts %}
             <h2>Your Active Hunts:</h2>
             {% for hunt_id, hunt_data in started_hunts.items() %}
@@ -56,7 +56,7 @@
                 <a href="/" class="btn">← Back to Home</a>
             </div>
         {% endif %}
-        
+
         <div style="text-align: center; margin-top: 40px;">
             <a href="/">← Back to Home Page</a>
         </div>
