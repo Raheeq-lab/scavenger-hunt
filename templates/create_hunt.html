@@ -451,11 +451,11 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group correct-answer-group">
                                 <label class="form-label">Correct Answer *</label>
                                 <input type="text" class="form-input correct-answer"
                                        placeholder="Enter the correct answer">
-                                <div class="form-help" id="answerHelp">For multiple choice, enter the exact choice text</div>
+                                <div class="form-help" id="answerHelp">For text questions, enter the exact answer text</div>
                             </div>
 
                             <div class="form-group">
@@ -520,11 +520,11 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group correct-answer-group">
                                 <label class="form-label">Correct Answer *</label>
                                 <input type="text" class="form-input correct-answer"
                                        placeholder="Enter the correct answer" required>
-                                <div class="form-help" id="answerHelp">For multiple choice, enter the exact choice text</div>
+                                <div class="form-help" id="answerHelp">For text questions, enter the exact answer text</div>
                             </div>
 
                             <div class="form-group">
@@ -662,20 +662,21 @@
             const questionItem = select.closest('.question-item');
             const choiceOptions = questionItem.querySelector('.choice-options');
             const correctAnswer = questionItem.querySelector('.correct-answer');
+            const correctAnswerGroup = questionItem.querySelector('.correct-answer-group');
             const answerHelp = questionItem.querySelector('#answerHelp');
 
             if (select.value === 'multiple-choice') {
                 choiceOptions.style.display = 'block';
-                correctAnswer.placeholder = 'Select a choice above';
-                answerHelp.textContent = 'Select the correct choice above. The answer will be updated automatically.';
-                correctAnswer.readOnly = true;
+                correctAnswerGroup.style.display = 'none';
             } else if (select.value === 'image') {
                 choiceOptions.style.display = 'none';
-                correctAnswer.placeholder = 'For image questions, any upload is accepted';
-                answerHelp.textContent = 'Students will upload an image - any valid image is accepted';
+                correctAnswerGroup.style.display = 'none';
+                correctAnswer.value = 'image_accepted';
             } else {
                 choiceOptions.style.display = 'none';
+                correctAnswerGroup.style.display = 'block';
                 correctAnswer.placeholder = 'Enter the correct answer';
+                correctAnswer.readOnly = false;
                 answerHelp.textContent = 'For text questions, enter the exact answer text';
             }
         }

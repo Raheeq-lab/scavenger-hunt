@@ -120,7 +120,7 @@
 
                 <div class="form-section">
                     <h2 class="section-title">Answer & Scoring</h2>
-                    <div class="form-group">
+                    <div class="form-group" id="correctAnswerGroup" style="{% if question.question_type != 'text' %}display: none;{% endif %}">
                         <label for="correctAnswer" class="form-label" id="answerLabel">Correct Answer <span class="required">*</span></label>
                         <input type="text" id="correctAnswer" name="correct_answer" class="form-input" value="{{ question.correct_answer }}" required maxlength="200">
                         <div class="form-help" id="answerHelp">For text questions, enter the exact answer text</div>
@@ -196,22 +196,20 @@
 
             const choiceOptions = document.getElementById('choiceOptions');
             const correctAnswer = document.getElementById('correctAnswer');
+            const correctAnswerGroup = document.getElementById('correctAnswerGroup');
             const answerLabel = document.getElementById('answerLabel');
             const answerHelp = document.getElementById('answerHelp');
 
             if (type === 'multiple-choice') {
                 choiceOptions.style.display = 'block';
-                answerLabel.innerHTML = 'Correct Answer (Selected from choices) <span class="required">*</span>';
-                answerHelp.textContent = 'Select the correct choice above. The answer will be updated automatically.';
-                correctAnswer.readOnly = true;
+                correctAnswerGroup.style.display = 'none';
             } else if (type === 'image') {
                 choiceOptions.style.display = 'none';
-                answerLabel.innerHTML = 'Image Acceptance Note';
-                answerHelp.textContent = 'Any valid image upload is accepted';
+                correctAnswerGroup.style.display = 'none';
                 correctAnswer.value = 'image_accepted';
-                correctAnswer.readOnly = true;
             } else {
                 choiceOptions.style.display = 'none';
+                correctAnswerGroup.style.display = 'block';
                 answerLabel.innerHTML = 'Correct Answer <span class="required">*</span>';
                 answerHelp.textContent = 'Enter the exact answer text (case-insensitive)';
                 correctAnswer.readOnly = false;

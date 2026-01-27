@@ -640,7 +640,7 @@
                 <div class="form-section">
                     <h2 class="section-title">Answer & Scoring</h2>
                     
-                    <div class="form-group">
+                    <div class="form-group" id="correctAnswerGroup">
                         <label for="correctAnswer" class="form-label" id="answerLabel">
                             Correct Answer <span class="required">*</span>
                         </label>
@@ -758,12 +758,10 @@
             
             // Show/hide choice options
             const choiceOptions = document.getElementById('choiceOptions');
+            const correctAnswerGroup = document.getElementById('correctAnswerGroup');
             if (type === 'multiple-choice') {
                 choiceOptions.style.display = 'block';
-                document.getElementById('answerLabel').innerHTML = 'Correct Answer (Selected from choices) <span class="required">*</span>';
-                document.getElementById('answerHelp').textContent = 'Select the correct choice above. The answer will be updated automatically.';
-                document.getElementById('correctAnswer').placeholder = 'Select a choice above';
-                document.getElementById('correctAnswer').readOnly = true;
+                correctAnswerGroup.style.display = 'none';
                 
                 // Validate choices when showing
                 setTimeout(() => {
@@ -773,13 +771,10 @@
             } else {
                 choiceOptions.style.display = 'none';
                 if (type === 'image') {
-                    document.getElementById('answerLabel').innerHTML = 'Image Acceptance Note';
-                    document.getElementById('answerHelp').textContent = 'For image questions, any valid image upload is accepted';
-                    document.getElementById('correctAnswer').placeholder = 'Any image upload is accepted';
+                    correctAnswerGroup.style.display = 'none';
                     document.getElementById('correctAnswer').value = 'image_accepted';
-                    document.getElementById('correctAnswer').readOnly = true;
-                    document.getElementById('correctAnswer').classList.add('input-success');
                 } else {
+                    correctAnswerGroup.style.display = 'block';
                     document.getElementById('answerLabel').innerHTML = 'Correct Answer <span class="required">*</span>';
                     document.getElementById('answerHelp').textContent = 'For text questions, enter the exact answer text (case-insensitive)';
                     document.getElementById('correctAnswer').placeholder = 'Enter the correct answer';
