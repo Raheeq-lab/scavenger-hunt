@@ -628,7 +628,7 @@ def submit_answer():
         'correct': is_correct,
         'points_earned': question.points if is_correct else 0,
         'total_score': progress['score'],
-        'hint': question.hint if is_correct else None,
+        'hint': question.hint if not is_correct else None,
         'next_location_hint': question.next_location_hint if is_correct else None,
         'next_qr_token': next_question.qr_token if next_question else None,
         'has_next': next_question is not None,

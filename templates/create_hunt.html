@@ -430,14 +430,24 @@
                             <!-- Multiple Choice Options (Hidden by default) -->
                             <div class="choice-options" style="display: none;">
                                 <div class="form-group">
-                                    <label class="form-label">Choices (Enter at least 2)</label>
-                                    <div class="choice-input-group">
-                                        <input type="text" class="choice-input" placeholder="Choice A *" required>
-                                        <input type="text" class="choice-input" placeholder="Choice B *" required>
-                                        <input type="text" class="choice-input" placeholder="Choice C (Optional)">
-                                        <input type="text" class="choice-input" placeholder="Choice D (Optional)">
+                                    <label class="form-label">Choices (Select the correct one)</label>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_tmpl" class="correct-choice-radio" value="0" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice A *" style="flex: 1;">
                                     </div>
-                                    <div class="form-help">Enter the choices students will see</div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_tmpl" class="correct-choice-radio" value="1" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice B *" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_tmpl" class="correct-choice-radio" value="2" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice C (Optional)" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_tmpl" class="correct-choice-radio" value="3" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice D (Optional)" style="flex: 1;">
+                                    </div>
+                                    <div class="form-help">Select the radio button next to the correct choice.</div>
                                 </div>
                             </div>
 
@@ -489,14 +499,24 @@
                             <!-- Multiple Choice Options (Hidden by default) -->
                             <div class="choice-options" style="display: none;">
                                 <div class="form-group">
-                                    <label class="form-label">Choices (Enter at least 2)</label>
-                                    <div class="choice-input-group">
-                                        <input type="text" class="choice-input" placeholder="Choice A *" required>
-                                        <input type="text" class="choice-input" placeholder="Choice B *" required>
-                                        <input type="text" class="choice-input" placeholder="Choice C (Optional)">
-                                        <input type="text" class="choice-input" placeholder="Choice D (Optional)">
+                                    <label class="form-label">Choices (Select the correct one)</label>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_1" class="correct-choice-radio" value="0" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice A *" style="flex: 1;">
                                     </div>
-                                    <div class="form-help">Enter the choices students will see</div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_1" class="correct-choice-radio" value="1" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice B *" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_1" class="correct-choice-radio" value="2" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice C (Optional)" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_1" class="correct-choice-radio" value="3" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice D (Optional)" style="flex: 1;">
+                                    </div>
+                                    <div class="form-help">Select the radio button next to the correct choice.</div>
                                 </div>
                             </div>
 
@@ -544,9 +564,35 @@
     <script>
         let questionCount = 1;
 
+        function syncCorrectAnswerCreate(questionItem, choiceIndex) {
+            const choices = questionItem.querySelectorAll('.choice-input');
+            const choiceText = choices[choiceIndex].value;
+            questionItem.querySelector('.correct-answer').value = choiceText;
+        }
+
+        function updateIfSelectedCreate(choiceInput) {
+            const questionItem = choiceInput.closest('.question-item');
+            const choiceGroup = choiceInput.closest('.choice-input-group');
+            const radio = choiceGroup.querySelector('.correct-choice-radio');
+            if (radio && radio.checked) {
+                syncCorrectAnswerCreate(questionItem, radio.value);
+            }
+        }
+
         // Initialize the first question
         document.addEventListener('DOMContentLoaded', function() {
             updateQuestionNumbers();
+
+            // Add listeners to first question
+            const firstQuestion = document.querySelector('.question-item[data-question-index="1"]');
+            const radios = firstQuestion.querySelectorAll('.correct-choice-radio');
+            radios.forEach(radio => {
+                radio.onchange = function() { syncCorrectAnswerCreate(firstQuestion, this.value); };
+            });
+            const choiceInputs = firstQuestion.querySelectorAll('.choice-input');
+            choiceInputs.forEach(input => {
+                input.oninput = function() { updateIfSelectedCreate(this); };
+            });
         });
 
         function addQuestion() {
@@ -554,11 +600,25 @@
             const newQuestion = template.cloneNode(true);
             newQuestion.id = '';
             newQuestion.style.display = 'block';
-            newQuestion.setAttribute('data-question-index', questionCount + 1);
+            const nextIndex = document.querySelectorAll('.question-item:not(#questionTemplate)').length + 1;
+            newQuestion.setAttribute('data-question-index', nextIndex);
 
             // Update question number
             const questionNumber = newQuestion.querySelector('.question-number');
-            questionNumber.textContent = `Question #${questionCount + 1}`;
+            questionNumber.textContent = `Question #${nextIndex}`;
+
+            // Set unique name for radio buttons
+            const radios = newQuestion.querySelectorAll('.correct-choice-radio');
+            radios.forEach(radio => {
+                radio.name = `correct_choice_${nextIndex}`;
+                radio.onchange = function() { syncCorrectAnswerCreate(newQuestion, this.value); };
+            });
+
+            // Set listeners for text inputs
+            const choiceInputs = newQuestion.querySelectorAll('.choice-input');
+            choiceInputs.forEach(input => {
+                input.oninput = function() { updateIfSelectedCreate(this); };
+            });
 
             // Clear inputs
             newQuestion.querySelector('.question-text').value = '';
@@ -567,7 +627,6 @@
             newQuestion.querySelector('.points-input').value = '10';
 
             // Reset choice inputs
-            const choiceInputs = newQuestion.querySelectorAll('.choice-input');
             choiceInputs[0].value = '';
             choiceInputs[1].value = '';
             choiceInputs[2].value = '';
@@ -607,8 +666,9 @@
 
             if (select.value === 'multiple-choice') {
                 choiceOptions.style.display = 'block';
-                correctAnswer.placeholder = 'Enter the exact choice text (e.g., "Choice A")';
-                answerHelp.textContent = 'For multiple choice, enter the exact choice text that is correct';
+                correctAnswer.placeholder = 'Select a choice above';
+                answerHelp.textContent = 'Select the correct choice above. The answer will be updated automatically.';
+                correctAnswer.readOnly = true;
             } else if (select.value === 'image') {
                 choiceOptions.style.display = 'none';
                 correctAnswer.placeholder = 'For image questions, any upload is accepted';

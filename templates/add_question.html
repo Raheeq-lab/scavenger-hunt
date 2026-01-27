@@ -581,42 +581,56 @@
                     <!-- Multiple Choice Options (Hidden by default) -->
                     <div id="choiceOptions" class="choice-options" style="display: none;">
                         <div class="form-group">
-                            <label class="form-label">Multiple Choice Options</label>
+                            <label class="form-label">Multiple Choice Options (Select the correct one)</label>
                             
-                            <div class="choice-input-group">
-                                <label class="choice-label">Choice A <span class="required">*</span></label>
-                                <input type="text" class="choice-input" name="choice1" 
-                                       placeholder="Enter first choice" id="choice1"
-                                       maxlength="200"
-                                       oninput="validateChoice(this)">
-                                <div class="validation-error" id="choice1Error"></div>
+                            <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <input type="radio" name="correct_choice" value="1" onchange="syncCorrectAnswer(1)" style="width: 20px; height: 20px; cursor: pointer;" id="radio1">
+                                <div style="flex: 1;">
+                                    <label class="choice-label">Choice A <span class="required">*</span></label>
+                                    <input type="text" class="choice-input" name="choice1"
+                                           placeholder="Enter first choice" id="choice1"
+                                           maxlength="200"
+                                           oninput="validateChoice(this); updateIfSelected(1)">
+                                    <div class="validation-error" id="choice1Error"></div>
+                                </div>
                             </div>
                             
-                            <div class="choice-input-group">
-                                <label class="choice-label">Choice B <span class="required">*</span></label>
-                                <input type="text" class="choice-input" name="choice2" 
-                                       placeholder="Enter second choice" id="choice2"
-                                       maxlength="200"
-                                       oninput="validateChoice(this)">
-                                <div class="validation-error" id="choice2Error"></div>
+                            <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <input type="radio" name="correct_choice" value="2" onchange="syncCorrectAnswer(2)" style="width: 20px; height: 20px; cursor: pointer;" id="radio2">
+                                <div style="flex: 1;">
+                                    <label class="choice-label">Choice B <span class="required">*</span></label>
+                                    <input type="text" class="choice-input" name="choice2"
+                                           placeholder="Enter second choice" id="choice2"
+                                           maxlength="200"
+                                           oninput="validateChoice(this); updateIfSelected(2)">
+                                    <div class="validation-error" id="choice2Error"></div>
+                                </div>
                             </div>
                             
-                            <div class="choice-input-group">
-                                <label class="choice-label">Choice C (Optional)</label>
-                                <input type="text" class="choice-input" name="choice3" 
-                                       placeholder="Enter third choice" id="choice3"
-                                       maxlength="200">
+                            <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <input type="radio" name="correct_choice" value="3" onchange="syncCorrectAnswer(3)" style="width: 20px; height: 20px; cursor: pointer;" id="radio3">
+                                <div style="flex: 1;">
+                                    <label class="choice-label">Choice C (Optional)</label>
+                                    <input type="text" class="choice-input" name="choice3"
+                                           placeholder="Enter third choice" id="choice3"
+                                           maxlength="200"
+                                           oninput="updateIfSelected(3)">
+                                </div>
                             </div>
                             
-                            <div class="choice-input-group">
-                                <label class="choice-label">Choice D (Optional)</label>
-                                <input type="text" class="choice-input" name="choice4" 
-                                       placeholder="Enter fourth choice" id="choice4"
-                                       maxlength="200">
+                            <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <input type="radio" name="correct_choice" value="4" onchange="syncCorrectAnswer(4)" style="width: 20px; height: 20px; cursor: pointer;" id="radio4">
+                                <div style="flex: 1;">
+                                    <label class="choice-label">Choice D (Optional)</label>
+                                    <input type="text" class="choice-input" name="choice4"
+                                           placeholder="Enter fourth choice" id="choice4"
+                                           maxlength="200"
+                                           oninput="updateIfSelected(4)">
+                                </div>
                             </div>
                             
                             <div class="form-help">
-                                Enter at least 2 choices. The order will be randomized for students.
+                                Select the radio button next to the correct choice.
                             </div>
                         </div>
                     </div>
@@ -717,6 +731,18 @@
             updateCharCount(document.getElementById('questionText'), 'questionCharCount');
         });
         
+        function syncCorrectAnswer(choiceNum) {
+            const choiceText = document.getElementById('choice' + choiceNum).value;
+            document.getElementById('correctAnswer').value = choiceText;
+        }
+
+        function updateIfSelected(choiceNum) {
+            const radio = document.getElementById('radio' + choiceNum);
+            if (radio && radio.checked) {
+                syncCorrectAnswer(choiceNum);
+            }
+        }
+
         function selectQuestionType(type) {
             currentQuestionType = type;
             document.getElementById('question_type').value = type;
@@ -734,9 +760,10 @@
             const choiceOptions = document.getElementById('choiceOptions');
             if (type === 'multiple-choice') {
                 choiceOptions.style.display = 'block';
-                document.getElementById('answerLabel').innerHTML = 'Correct Choice <span class="required">*</span>';
-                document.getElementById('answerHelp').textContent = 'Enter the exact text of the correct choice (e.g., "Choice A")';
-                document.getElementById('correctAnswer').placeholder = 'Enter the exact choice text';
+                document.getElementById('answerLabel').innerHTML = 'Correct Answer (Selected from choices) <span class="required">*</span>';
+                document.getElementById('answerHelp').textContent = 'Select the correct choice above. The answer will be updated automatically.';
+                document.getElementById('correctAnswer').placeholder = 'Select a choice above';
+                document.getElementById('correctAnswer').readOnly = true;
                 
                 // Validate choices when showing
                 setTimeout(() => {

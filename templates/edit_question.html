@@ -103,12 +103,15 @@
 
                     <div id="choiceOptions" class="choice-options" style="{% if question.question_type != 'multiple-choice' %}display: none;{% endif %}">
                         <div class="form-group">
-                            <label class="form-label">Multiple Choice Options</label>
+                            <label class="form-label">Multiple Choice Options (Select the correct one)</label>
                             {% for i in range(1, 5) %}
-                            <div class="choice-input-group">
-                                <label class="choice-label">Choice {{ ['A', 'B', 'C', 'D'][i-1] }} {% if i <= 2 %}<span class="required">*</span>{% endif %}</label>
-                                <input type="text" class="choice-input" name="choice{{ i }}" id="choice{{ i }}" value="{{ choices[i-1] if choices|length >= i else '' }}" maxlength="200">
-                                <div class="validation-error" id="choice{{ i }}Error"></div>
+                            <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <input type="radio" name="correct_choice" value="{{ i }}" onchange="syncCorrectAnswer({{ i }})" style="width: 20px; height: 20px; cursor: pointer;" id="radio{{ i }}" {% if choices|length >= i and choices[i-1] == question.correct_answer %}checked{% endif %}>
+                                <div style="flex: 1;">
+                                    <label class="choice-label">Choice {{ ['A', 'B', 'C', 'D'][i-1] }} {% if i <= 2 %}<span class="required">*</span>{% endif %}</label>
+                                    <input type="text" class="choice-input" name="choice{{ i }}" id="choice{{ i }}" value="{{ choices[i-1] if choices|length >= i else '' }}" maxlength="200" oninput="updateIfSelected({{ i }})">
+                                    <div class="validation-error" id="choice{{ i }}Error"></div>
+                                </div>
                             </div>
                             {% endfor %}
                         </div>
@@ -172,6 +175,18 @@
             });
         });
 
+        function syncCorrectAnswer(choiceNum) {
+            const choiceText = document.getElementById('choice' + choiceNum).value;
+            document.getElementById('correctAnswer').value = choiceText;
+        }
+
+        function updateIfSelected(choiceNum) {
+            const radio = document.getElementById('radio' + choiceNum);
+            if (radio && radio.checked) {
+                syncCorrectAnswer(choiceNum);
+            }
+        }
+
         function selectQuestionType(type) {
             currentQuestionType = type;
             document.getElementById('question_type').value = type;
@@ -186,9 +201,9 @@
 
             if (type === 'multiple-choice') {
                 choiceOptions.style.display = 'block';
-                answerLabel.innerHTML = 'Correct Choice <span class="required">*</span>';
-                answerHelp.textContent = 'Enter the exact text of the correct choice';
-                correctAnswer.readOnly = false;
+                answerLabel.innerHTML = 'Correct Answer (Selected from choices) <span class="required">*</span>';
+                answerHelp.textContent = 'Select the correct choice above. The answer will be updated automatically.';
+                correctAnswer.readOnly = true;
             } else if (type === 'image') {
                 choiceOptions.style.display = 'none';
                 answerLabel.innerHTML = 'Image Acceptance Note';
