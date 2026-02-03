@@ -560,7 +560,8 @@
             const nextBtn = document.getElementById('nextBtn');
 
             if (data.correct) {
-                resultDiv.textContent = '✅ Correct! +' + (data.points_earned || 10) + ' points';
+                const pointsEarned = (data.points_earned !== undefined) ? data.points_earned : 10;
+                resultDiv.textContent = '✅ Correct! +' + pointsEarned + ' points';
                 if (data.total_score !== undefined) {
                     resultDiv.textContent += ` (Total: ${data.total_score} points)`;
                 }
