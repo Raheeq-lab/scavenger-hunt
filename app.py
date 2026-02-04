@@ -494,6 +494,7 @@ def student_dashboard():
     if 'student_id' not in session:
         session['student_id'] = str(uuid.uuid4())
         session['student_name'] = f"Student_{random.randint(1000, 9999)}"
+        session['name_set'] = False
         session['progress'] = {}
 
     active_hunts = Hunt.query.filter_by(is_active=True).all()
@@ -532,6 +533,7 @@ def start_hunt(hunt_id):
     if 'student_id' not in session:
         session['student_id'] = str(uuid.uuid4())
         session['student_name'] = f"Student_{random.randint(1000, 9999)}"
+        session['name_set'] = False
         session['progress'] = {}
 
     hunt = Hunt.query.filter_by(id=hunt_id, is_active=True).first()
@@ -575,6 +577,7 @@ def student_question(qr_token):
     if 'student_id' not in session:
         session['student_id'] = str(uuid.uuid4())
         session['student_name'] = f"Student_{random.randint(1000, 9999)}"
+        session['name_set'] = False
         session['progress'] = {}
 
     # Get next question info
@@ -598,6 +601,21 @@ def student_question(qr_token):
                          hunt=hunt,
                          choices=choices,
                          next_question=next_question)
+
+@app.route("/api/student/set-name", methods=['POST'])
+def set_student_name():
+    data = request.get_json()
+    if not data or 'name' not in data:
+        return jsonify({'success': False, 'error': 'Name is required'}), 400
+
+    name = data.get('name', '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': 'Name cannot be empty'}), 400
+
+    session['student_name'] = name
+    session['name_set'] = True
+    session.modified = True
+    return jsonify({'success': True, 'message': 'Name updated successfully', 'name': name})
 
 @app.route("/api/student/submit-answer", methods=['POST'])
 def submit_answer():
@@ -864,7 +882,10 @@ def submit_image():
 @app.route("/student/progress/<int:hunt_id>")
 def student_progress(hunt_id):
     if 'student_id' not in session:
-        return redirect(url_for('student_dashboard'))
+        session['student_id'] = str(uuid.uuid4())
+        session['student_name'] = f"Student_{random.randint(1000, 9999)}"
+        session['name_set'] = False
+        session['progress'] = {}
 
     hunt = Hunt.query.get_or_404(hunt_id)
     progress = session.get('progress', {}).get(str(hunt_id), {})

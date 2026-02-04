@@ -122,7 +122,7 @@
                     <h2 class="section-title">Answer & Scoring</h2>
                     <div class="form-group" id="correctAnswerGroup" style="{% if question.question_type != 'text' %}display: none;{% endif %}">
                         <label for="correctAnswer" class="form-label" id="answerLabel">Correct Answer <span class="required">*</span></label>
-                        <input type="text" id="correctAnswer" name="correct_answer" class="form-input" value="{{ question.correct_answer }}" required maxlength="200">
+                        <input type="text" id="correctAnswer" name="correct_answer" class="form-input" value="{{ question.correct_answer }}" maxlength="200">
                         <div class="form-help" id="answerHelp">For text questions, enter the exact answer text</div>
                         <div class="validation-error" id="correctAnswerError"></div>
                     </div>

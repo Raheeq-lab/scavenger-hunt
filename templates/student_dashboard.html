@@ -23,6 +23,16 @@
         <div class="header">
             <h1>👨‍🎓 Student Dashboard</h1>
             <p>Track your scavenger hunt progress</p>
+            <div style="margin-top: 20px; background: white; padding: 15px; border-radius: 10px; display: inline-block; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                <span style="color: #666;">Playing as:</span>
+                <strong id="displayStudentName">{{ session.get('student_name', 'Anonymous') }}</strong>
+                <button onclick="toggleEditName()" style="margin-left: 10px; background: none; border: none; color: #2196F3; cursor: pointer; text-decoration: underline; font-size: 0.9em;">Edit Name</button>
+
+                <div id="editNameForm" style="display: none; margin-top: 10px;">
+                    <input type="text" id="newNameInput" value="{{ session.get('student_name', '') }}" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                    <button onclick="updateName()" class="btn" style="padding: 8px 15px; font-size: 0.9em;">Save</button>
+                </div>
+            </div>
         </div>
 
         <div class="qr-instruction">
@@ -61,5 +71,40 @@
             <a href="/">← Back to Home Page</a>
         </div>
     </div>
+
+    <script>
+        function toggleEditName() {
+            const form = document.getElementById('editNameForm');
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function updateName() {
+            const newName = document.getElementById('newNameInput').value.trim();
+            if (!newName) {
+                alert('Name cannot be empty');
+                return;
+            }
+
+            fetch('/api/student/set-name', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: newName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('displayStudentName').textContent = data.name;
+                    toggleEditName();
+                    alert('Name updated successfully!');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Network error');
+            });
+        }
+    </script>
 </body>
 </html>
