@@ -137,6 +137,9 @@
             <a href="{{ url_for('add_question', hunt_id=hunt.id) }}" class="btn btn-primary">
                 + Add Question
             </a>
+            <a href="{{ url_for('hunt_results', hunt_id=hunt.id) }}" class="btn btn-secondary" style="background: #2196F3; color: white; border: none;">
+                📊 View Results
+            </a>
             <button onclick="toggleHuntActive({{ hunt.id }})" class="btn" style="background: {% if hunt.is_active %}#dc3545{% else %}#28a745{% endif %}; color: white;">
                 {% if hunt.is_active %}⛔ Deactivate Hunt{% else %}✅ Activate Hunt{% endif %}
             </button>

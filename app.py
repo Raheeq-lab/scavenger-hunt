@@ -73,6 +73,17 @@ class Question(db.Model):
     image_filename = db.Column(db.String(200))  # For image questions
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Submission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    hunt_id = db.Column(db.Integer, db.ForeignKey('hunt.id'), nullable=False)
+    student_name = db.Column(db.String(100), nullable=False)
+    total_score = db.Column(db.Integer, default=0)
+    max_score = db.Column(db.Integer, default=0)
+    completed_questions = db.Column(db.Integer, default=0)
+    total_questions = db.Column(db.Integer, default=0)
+    marks_json = db.Column(db.Text)  # JSON string for per-question points
+    completed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 # Helper Functions
 def get_qr_url(qr_token):
     """Generate QR URL"""
@@ -350,6 +361,30 @@ def view_hunt(hunt_id):
                          hunt=hunt,
                          questions=questions)
 
+@app.route("/teacher/hunt/<int:hunt_id>/results")
+def hunt_results(hunt_id):
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return redirect(url_for('teacher_login'))
+
+    hunt = Hunt.query.get_or_404(hunt_id)
+    if hunt.teacher_id != session['user_id']:
+        flash('Access denied', 'danger')
+        return redirect(url_for('teacher_dashboard'))
+
+    submissions = Submission.query.filter_by(hunt_id=hunt_id).order_by(Submission.completed_at.desc()).all()
+
+    # Pre-process marks for each submission if needed
+    for sub in submissions:
+        if sub.marks_json:
+            try:
+                sub.marks = json.loads(sub.marks_json)
+            except:
+                sub.marks = {}
+        else:
+            sub.marks = {}
+
+    return render_template('teacher_hunt_results.html', hunt=hunt, submissions=submissions)
+
 @app.route("/teacher/hunt/<int:hunt_id>/toggle-active", methods=['POST'])
 def toggle_hunt_active(hunt_id):
     if 'user_type' not in session or session['user_type'] != 'teacher':
@@ -594,12 +629,15 @@ def submit_answer():
             'score': 0,
             'completed_questions': [],
             'attempts': {},
+            'marks': {},
             'started_at': datetime.utcnow().isoformat()
         }
 
     progress = session['progress'][hunt_id_str]
     if 'attempts' not in progress:
         progress['attempts'] = {}
+    if 'marks' not in progress:
+        progress['marks'] = {}
 
     # Check if already completed
     if qr_token in progress.get('completed_questions', []):
@@ -646,6 +684,7 @@ def submit_answer():
             points_earned = int(question.points * multiplier)
             progress['completed_questions'].append(qr_token)
             progress['score'] += points_earned
+            progress['marks'][qr_token] = points_earned
             progress['current_question'] = question.question_order + 1
 
     session.modified = True
@@ -655,6 +694,27 @@ def submit_answer():
         hunt_id=question.hunt_id,
         question_order=question.question_order + 1
     ).first()
+
+    # Detect completion and save to database
+    if is_correct and not next_question:
+        try:
+            total_questions = len(hunt.questions)
+            max_score = sum([q.points for q in hunt.questions])
+
+            submission = Submission(
+                hunt_id=hunt.id,
+                student_name=session.get('student_name', 'Anonymous Student'),
+                total_score=progress['score'],
+                max_score=max_score,
+                completed_questions=len(progress['completed_questions']),
+                total_questions=total_questions,
+                marks_json=json.dumps(progress.get('marks', {}))
+            )
+            db.session.add(submission)
+            db.session.commit()
+        except Exception as e:
+            print(f"Error saving submission: {e}")
+            db.session.rollback()
 
     response = {
         'success': True,
@@ -723,12 +783,15 @@ def submit_image():
             'score': 0,
             'completed_questions': [],
             'attempts': {},
+            'marks': {},
             'started_at': datetime.utcnow().isoformat()
         }
 
     progress = session['progress'][hunt_id_str]
     if 'attempts' not in progress:
         progress['attempts'] = {}
+    if 'marks' not in progress:
+        progress['marks'] = {}
 
     # Increment attempts for this question
     current_attempts = progress['attempts'].get(qr_token, 0) + 1
@@ -754,6 +817,7 @@ def submit_image():
         points_earned = int(question.points * multiplier)
         progress['completed_questions'].append(qr_token)
         progress['score'] += points_earned
+        progress['marks'][qr_token] = points_earned
         progress['current_question'] = question.question_order + 1
 
     session.modified = True
@@ -763,6 +827,28 @@ def submit_image():
         hunt_id=question.hunt_id,
         question_order=question.question_order + 1
     ).first()
+
+    # Detect completion and save to database
+    if not next_question:
+        try:
+            hunt = Hunt.query.get(question.hunt_id)
+            total_questions = len(hunt.questions)
+            max_score = sum([q.points for q in hunt.questions])
+
+            submission = Submission(
+                hunt_id=hunt.id,
+                student_name=session.get('student_name', 'Anonymous Student'),
+                total_score=progress['score'],
+                max_score=max_score,
+                completed_questions=len(progress['completed_questions']),
+                total_questions=total_questions,
+                marks_json=json.dumps(progress.get('marks', {}))
+            )
+            db.session.add(submission)
+            db.session.commit()
+        except Exception as e:
+            print(f"Error saving submission: {e}")
+            db.session.rollback()
 
     return jsonify({
         'success': True,

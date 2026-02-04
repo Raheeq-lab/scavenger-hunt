@@ -63,7 +63,7 @@
                 </h2>
                 <div class="summary-stats">
                     <div class="stat-item">
-                        <div class="stat-number">{{ progress.score }}</div>
+                        <div class="stat-number">{{ progress.score }} / {{ hunt.questions|sum(attribute='points') }}</div>
                         <div class="stat-label">Total Points</div>
                     </div>
                     <div class="stat-item">
@@ -193,7 +193,15 @@
                                 Q{{ question.question_order }}: {{ question.text[:50] }}{% if question.text|length > 50 %}...{% endif %}
                             </div>
                             <div class="score-points">
-                                {% if is_completed %}+{{ question.points }}{% else %}0{% endif %} pts
+                                {% if is_completed %}
+                                    {% if progress.marks and question.qr_token in progress.marks %}
+                                        +{{ progress.marks[question.qr_token] }}
+                                    {% else %}
+                                        +{{ question.points }}
+                                    {% endif %}
+                                {% else %}
+                                    0
+                                {% endif %} / {{ question.points }} pts
                             </div>
                         </div>
                         {% endfor %}
