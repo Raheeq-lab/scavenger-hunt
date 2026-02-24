@@ -748,28 +748,40 @@ def submit_answer():
         # For image questions, any uploaded image is considered correct
         is_correct = True
 
-    # Update progress
+    # Point degradation and move-on logic
     points_earned = 0
+    force_move_on = False
+    
     if is_correct:
-        if qr_token not in progress['completed_questions']:
-            # Point degradation logic:
-            # 1st attempt: 100%
-            # 2nd attempt: 50%
-            # 3rd attempt: 10%
-            # 4th+ attempt: 0%
-            if current_attempts == 1:
-                multiplier = 1.0
-            elif current_attempts == 2:
-                multiplier = 0.5
-            elif current_attempts == 3:
-                multiplier = 0.1
+        if qr_token not in progress.get('completed_questions', []):
+            if question.question_type == 'multiple-choice':
+                if current_attempts == 1: multiplier = 1.0
+                elif current_attempts == 2: multiplier = 0.5
+                elif current_attempts == 3: multiplier = 0.2
+                else: multiplier = 0.0
             else:
-                multiplier = 0.0
+                multiplier = 1.0
 
             points_earned = int(question.points * multiplier)
-            progress['completed_questions'].append(qr_token)
-            progress['score'] += points_earned
-            progress['current_question'] = question.question_order + 1
+            if qr_token not in progress['completed_questions']:
+                progress['completed_questions'].append(qr_token)
+                progress['score'] += points_earned
+                progress['current_question'] = question.question_order + 1
+    else:
+        # WRONG ANSWER LOGIC
+        if question.question_type == 'text':
+            # Text questions: one fail and you're out
+            force_move_on = True
+            if qr_token not in progress['completed_questions']:
+                progress['completed_questions'].append(qr_token)
+                progress['current_question'] = question.question_order + 1
+        elif question.question_type == 'multiple-choice':
+            # MC questions: 3 fails and you're out
+            if current_attempts >= 3:
+                force_move_on = True
+                if qr_token not in progress['completed_questions']:
+                    progress['completed_questions'].append(qr_token)
+                    progress['current_question'] = question.question_order + 1
 
     session.modified = True
 
@@ -785,13 +797,14 @@ def submit_answer():
         'points_earned': points_earned,
         'attempts': current_attempts,
         'total_score': progress['score'],
-        'hint': question.hint if not is_correct else None,
-        'next_location_hint': question.next_location_hint if is_correct else None,
+        'force_move_on': force_move_on,
+        'hint': question.hint if not is_correct and not force_move_on else None,
+        'next_location_hint': question.next_location_hint if (is_correct or force_move_on) else None,
         'next_qr_token': next_question.qr_token if next_question else None,
         'next_is_new_location': next_question.is_new_location if next_question else False,
         'has_next': next_question is not None,
         'is_last_question': next_question is None,
-        'completion_message': "🎉 Congratulations! You've completed the entire hunt!" if not next_question and is_correct else None
+        'completion_message': "🎉 Congratulations! You've completed the entire hunt!" if not next_question and (is_correct or force_move_on) else None
     }
 
     return jsonify(response)

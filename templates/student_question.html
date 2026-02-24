@@ -595,27 +595,33 @@
             const progressFill = document.getElementById('progressFill');
             const nextBtn = document.getElementById('nextBtn');
 
-            if (data.correct) {
-                const pointsEarned = (data.points_earned !== undefined) ? data.points_earned : 10;
-                resultDiv.textContent = '✅ Correct! +' + pointsEarned + ' points';
-                if (data.total_score !== undefined) {
-                    resultDiv.textContent += ` (Total: ${data.total_score} points)`;
+            if (data.correct || data.force_move_on) {
+                if (data.correct) {
+                    const pointsEarned = (data.points_earned !== undefined) ? data.points_earned : 10;
+                    resultDiv.textContent = '✅ Correct! +' + pointsEarned + ' points';
+                    resultDiv.className = 'result-message correct';
+                } else if (data.force_move_on) {
+                    resultDiv.textContent = '❌ Incorrect. Moving to next question (0 points).';
+                    resultDiv.className = 'result-message incorrect';
                 }
-                resultDiv.className = 'result-message correct';
+
+                if (data.total_score !== undefined) {
+                    resultDiv.textContent += ` (Total Score: ${data.total_score} pts)`;
+                }
 
                 // Update progress bar
                 progressFill.style.width = '100%';
 
                 // Show clue if available
-                if (data.next_location_hint || data.next_qr_token) {
-                    let clueHTML = '<strong>🎉 Correct!</strong>';
+                if (data.next_location_hint || data.next_qr_token || data.completion_message) {
+                    let clueHTML = data.correct ? '<strong>🎉 Excellent work!</strong>' : '<strong>⏩ Moving Forward</strong>';
 
                     if (data.next_location_hint) {
-                        clueHTML += `<br><strong>Next Clue:</strong> ${data.next_location_hint}`;
+                        clueHTML += `<br><br><strong>Next Clue:</strong> ${data.next_location_hint}`;
                     }
 
-                    if (data.image_url) {
-                        clueHTML += `<br><br><img src="${data.image_url}" class="preview-image" style="max-width: 300px;">`;
+                    if (data.completion_message) {
+                        clueHTML += `<br><br><strong>${data.completion_message}</strong>`;
                     }
 
                     clueText.innerHTML = clueHTML;
@@ -623,47 +629,31 @@
 
                     // Setup next button
                     if (data.next_qr_token) {
-                        if (data.next_is_new_location) {
-                            nextBtn.textContent = 'Continue to Next Location';
-                        } else {
-                            nextBtn.textContent = 'Continue to Next Question';
-                        }
-
+                        nextBtn.textContent = data.next_is_new_location ? 'Continue to Next Location' : 'Continue to Next Question';
                         nextBtn.onclick = function () {
                             window.location.href = `/student/question/${data.next_qr_token}`;
                         };
-                    } else if (data.has_next === false) {
+                    } else {
                         nextBtn.textContent = '🏁 Hunt Complete!';
                         nextBtn.onclick = function () {
                             window.location.href = '/student/dashboard';
                         };
-                    } else {
-                        nextBtn.textContent = 'Continue';
-                        nextBtn.onclick = function () {
-                            window.location.href = '/student/dashboard';
-                        };
                     }
-                } else if (data.completion_message) {
-                    clueText.innerHTML = `<strong>${data.completion_message}</strong>`;
-                    clueDiv.style.display = 'block';
-                    nextBtn.textContent = '🏁 Return to Dashboard';
-                    nextBtn.onclick = function () {
-                        window.location.href = '/student/dashboard';
-                    };
                 } else {
-                    // If no clue but correct, show success and redirect
+                    // Fallback redirect
                     setTimeout(() => {
-                        if (data.next_qr_token) {
-                            window.location.href = `/student/question/${data.next_qr_token}`;
-                        } else {
-                            window.location.href = '/student/dashboard';
-                        }
-                    }, 1500);
+                        window.location.href = data.next_qr_token ? `/student/question/${data.next_qr_token}` : '/student/dashboard';
+                    }, 2000);
                 }
             } else {
+                // Wrong but can try again
                 resultDiv.textContent = '❌ Incorrect. Try again!';
+                if (data.attempts) {
+                    const max = questionType === 'text' ? 1 : 3;
+                    resultDiv.textContent += ` (Attempt ${data.attempts}/${max})`;
+                }
                 if (data.hint) {
-                    resultDiv.textContent += ` Hint: ${data.hint}`;
+                    resultDiv.textContent += `<br><small>Hint: ${data.hint}</small>`;
                 }
                 resultDiv.className = 'result-message incorrect';
                 resultDiv.style.display = 'block';
