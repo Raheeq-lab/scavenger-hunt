@@ -426,6 +426,26 @@ def delete_hunt(hunt_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route("/teacher/question/<int:question_id>/toggle-qr", methods=['POST'])
+def toggle_question_qr(question_id):
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+
+    question = Question.query.get_or_404(question_id)
+    hunt = Hunt.query.get(question.hunt_id)
+    
+    if hunt.teacher_id != session['user_id']:
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+    question.is_new_location = not question.is_new_location
+    db.session.commit()
+    
+    return jsonify({
+        'success': True, 
+        'is_new_location': question.is_new_location,
+        'message': 'QR Status updated'
+    })
+
 @app.route("/teacher/hunt/<int:hunt_id>/edit", methods=['GET', 'POST'])
 def edit_hunt(hunt_id):
     if 'user_type' not in session or session['user_type'] != 'teacher':
