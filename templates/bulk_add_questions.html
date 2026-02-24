@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Add Station (Multi-Question) - {{ hunt.name }}</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #2E7D32;
+            --secondary: #2196F3;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #334155;
+            --border: #e2e8f0;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding-bottom: 100px;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .header-section {
+            margin-bottom: 2rem;
+        }
+
+        .back-link {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        .station-setup {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            border-left: 6px solid var(--secondary);
+        }
+
+        .question-card {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            position: relative;
+            border: 1px solid var(--border);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .q-number {
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            background: var(--secondary);
+            color: white;
+            padding: 4px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .remove-q {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: 0.2s;
+        }
+
+        .remove-q:hover {
+            opacity: 1;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .choices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .add-q-btn {
+            width: 100%;
+            padding: 1rem;
+            border: 2px dashed var(--border);
+            background: transparent;
+            color: #94a3b8;
+            border-radius: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .add-q-btn:hover {
+            border-color: var(--secondary);
+            color: var(--secondary);
+            background: #f0f7ff;
+        }
+
+        .fab-save {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            border: none;
+            font-weight: 800;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+            cursor: pointer;
+            z-index: 1000;
+            transition: 0.32s;
+        }
+
+        .fab-save:hover {
+            background: var(--primary-dark);
+            transform: translateX(-50%) translateY(-5px);
+        }
+
+        .fab-save:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* Types Icons */
+        .type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.8rem;
+            background: white;
+            transition: 0.2s;
+        }
+
+        .type-btn.active {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+
+        .next-clue-box {
+            background: #fff7ed;
+            border: 1px solid #ffedd5;
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .next-clue-icon {
+            font-size: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <div style="font-weight: 800; font-size: 1.5rem;">🎯 Scavenger Hunt</div>
+        <div style="font-size: 0.9rem;">Teacher Portal</div>
+    </div>
+
+    <div class="container">
+        <a href="/teacher/hunt/{{ hunt.id }}/view" class="back-link">← Cancel and Go Back</a>
+
+        <div class="header-section">
+            <h1 style="font-size: 2rem; font-weight: 800;">Create a Station</h1>
+            <p style="color: #64748b;">Add multiple questions that students will answer at this single QR location.</p>
+        </div>
+
+        <div class="station-setup">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="font-size: 2rem;">📍</div>
+                <div>
+                    <div style="font-weight: 800; color: var(--secondary);">STATION QR CODE</div>
+                    <div style="font-size: 0.85rem; color: #64748b;">One QR code will be generated for the first
+                        question. The rest will follow automatically.</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="questionsContainer">
+            <!-- Questions will be added here -->
+        </div>
+
+        <button type="button" class="add-q-btn" onclick="addQuestionBlock()">
+            <span>➕</span> Add Another Question to this Station
+        </button>
+
+        <div class="next-clue-box">
+            <div class="next-clue-icon">🧭</div>
+            <div style="flex: 1;">
+                <label>Arrival Clue (Where to go NEXT?)</label>
+                <input type="text" id="finalNextLocation" placeholder="e.g. Now go to the library entrance...">
+                <div style="font-size: 0.75rem; color: #9a3412; margin-top: 5px;">This clue will be shown ONLY after the
+                    final question at this station is answered.</div>
+            </div>
+        </div>
+    </div>
+
+    <button id="saveBtn" class="fab-save" onclick="saveAll()">
+        🚀 CREATE STATION
+    </button>
+
+    <script>
+        let questionCount = 0;
+
+        function addQuestionBlock() {
+            if (questionCount >= 10) {
+                alert("Maximum 10 questions per station group.");
+                return;
+            }
+            questionCount++;
+            const container = document.getElementById('questionsContainer');
+            const id = Date.now();
+
+            const card = document.createElement('div');
+            card.className = 'question-card';
+            card.id = `q-${id}`;
+            card.innerHTML = `
+                <div class="q-number">QUESTION ${questionCount}</div>
+                ${questionCount > 1 ? `<div class="remove-q" onclick="removeQuestion(${id})">✕</div>` : ''}
+                
+                <div class="form-grid">
+                    <div class="full-width">
+                        <label>Question Type</label>
+                        <div class="type-selector">
+                            <div class="type-btn active" data-type="text" onclick="setType(${id}, 'text')">📝 Text</div>
+                            <div class="type-btn" data-type="multiple-choice" onclick="setType(${id}, 'multiple-choice')">🔘 Choice</div>
+                            <div class="type-btn" data-type="image" onclick="setType(${id}, 'image')">📷 Photo</div>
+                        </div>
+                        <input type="hidden" name="type" value="text" id="type-${id}">
+                    </div>
+
+                    <div class="full-width">
+                        <label>The Question</label>
+                        <textarea name="text" placeholder="What is your question?" required></textarea>
+                    </div>
+
+                    <div id="answer-box-${id}">
+                        <label>Correct Answer</label>
+                        <input type="text" name="answer" placeholder="Exact answer..." required>
+                    </div>
+
+                    <div>
+                        <label>Wrong Answer Hint</label>
+                        <input type="text" name="hint" placeholder="Try looking near...">
+                    </div>
+
+                    <div class="full-width" id="mc-box-${id}" style="display:none;">
+                        <label>Choices (One per line)</label>
+                        <textarea name="choices" placeholder="Option A\nOption B\nOption C" style="height: 100px; font-family: monospace;"></textarea>
+                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 5px;">Type the correct answer exactly as it appears in the options.</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+            updateQuestionNumbers();
+        }
+
+        function removeQuestion(id) {
+            const card = document.getElementById(`q-${id}`);
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            setTimeout(() => {
+                card.remove();
+                questionCount--;
+                updateQuestionNumbers();
+            }, 300);
+        }
+
+        function updateQuestionNumbers() {
+            const cards = document.querySelectorAll('.question-card');
+            cards.forEach((card, index) => {
+                card.querySelector('.q-number').textContent = `QUESTION ${index + 1}`;
+            });
+        }
+
+        function setType(id, type) {
+            const card = document.getElementById(`q-${id}`);
+            card.querySelector(`#type-${id}`).value = type;
+
+            // Toggle UI
+            card.querySelectorAll('.type-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.type === type);
+            });
+
+            const mcBox = card.querySelector(`#mc-box-${id}`);
+            const answerBox = card.querySelector(`#answer-box-${id}`);
+
+            if (type === 'multiple-choice') {
+                mcBox.style.display = 'block';
+                answerBox.style.display = 'block';
+            } else if (type === 'image') {
+                mcBox.style.display = 'none';
+                answerBox.style.display = 'none';
+            } else {
+                mcBox.style.display = 'none';
+                answerBox.style.display = 'block';
+            }
+        }
+
+        async function saveAll() {
+            const btn = document.getElementById('saveBtn');
+            const originalText = btn.innerHTML;
+
+            const cards = document.querySelectorAll('.question-card');
+            if (cards.length === 0) {
+                alert("Add at least one question.");
+                return;
+            }
+
+            const questions = [];
+            const nextLocationHint = document.getElementById('finalNextLocation').value;
+
+            for (let i = 0; i < cards.length; i++) {
+                const card = cards[i];
+                const type = card.querySelector('input[name="type"]').value;
+                const text = card.querySelector('textarea[name="text"]').value;
+                const answer = type === 'image' ? 'image_accepted' : card.querySelector('input[name="answer"]').value;
+                const hint = card.querySelector('input[name="hint"]').value;
+
+                let choices = [];
+                if (type === 'multiple-choice') {
+                    const choicesRaw = card.querySelector('textarea[name="choices"]').value;
+                    choices = choicesRaw.split('\n').map(c => c.trim()).filter(c => c);
+                    if (choices.length < 2) {
+                        alert(`Question ${i + 1} needs at least 2 choices!`);
+                        return;
+                    }
+                    if (!choices.includes(answer)) {
+                        alert(`Question ${i + 1}: Correct answer must match one of the choices!`);
+                        return;
+                    }
+                }
+
+                if (!text) {
+                    alert(`Question ${i + 1} is missing the question text!`);
+                    return;
+                }
+
+                questions.push({
+                    question_type: type,
+                    text: text,
+                    correct_answer: answer,
+                    hint: hint,
+                    choices: choices,
+                    points: 10,
+                    // Only the last question in the batch gets the NEXT location clue
+                    next_location_hint: (i === cards.length - 1) ? nextLocationHint : '',
+                    // The first question starts the QR station
+                    is_new_location: (i === 0)
+                });
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = "⏳ SAVING STATION GROUP...";
+
+            try {
+                const response = await fetch('/teacher/hunt/{{ hunt.id }}/bulk-add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ questions })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    window.location.href = result.redirect;
+                } else {
+                    alert("Error: " + result.error);
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            } catch (e) {
+                alert("Connection lost. Please check your internet.");
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        // Add first question on load
+        addQuestionBlock();
+    </script>
+</body>
+
+</html>

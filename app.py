@@ -358,6 +358,59 @@ def add_question(hunt_id):
 
     return render_template('add_question.html', hunt=hunt)
 
+@app.route("/teacher/hunt/<int:hunt_id>/bulk-add", methods=['GET', 'POST'])
+def bulk_add_questions(hunt_id):
+    if 'user_type' not in session or session['user_type'] != 'teacher':
+        return redirect(url_for('teacher_login'))
+
+    hunt = Hunt.query.get_or_404(hunt_id)
+    if hunt.teacher_id != session['user_id']:
+        flash('Access denied', 'danger')
+        return redirect(url_for('teacher_dashboard'))
+
+    if request.method == 'POST':
+        try:
+            data = request.json
+            if not data or 'questions' not in data:
+                return jsonify({'success': False, 'error': 'No questions data provided'}), 400
+
+            # Get starting order
+            last_question = Question.query.filter_by(hunt_id=hunt_id).order_by(Question.question_order.desc()).first()
+            current_order = last_question.question_order + 1 if last_question else 1
+
+            for i, q_data in enumerate(data['questions']):
+                # First question in bulk is usually new location, rest are linked
+                # But we'll trust the FE data
+                is_new = q_data.get('is_new_location', True) if i == 0 else False
+                
+                # If first question in bulk, generate a common token for this "station"
+                # Actually, in our model each question has its own qr_token, 
+                # but if is_new_location=False, we use the first one anyway in the UI.
+                
+                question = Question(
+                    hunt_id=hunt_id,
+                    question_order=current_order,
+                    question_type=q_data.get('question_type', 'text'),
+                    text=q_data['text'],
+                    choices=json.dumps(q_data.get('choices', [])),
+                    correct_answer=q_data['correct_answer'],
+                    hint=q_data.get('hint', ''),
+                    next_location_hint=q_data.get('next_location_hint', ''),
+                    qr_token=str(uuid.uuid4()),
+                    points=int(q_data.get('points', 10)),
+                    is_new_location=is_new
+                )
+                db.session.add(question)
+                current_order += 1
+
+            db.session.commit()
+            return jsonify({'success': True, 'redirect': url_for('view_hunt', hunt_id=hunt_id)})
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    return render_template('bulk_add_questions.html', hunt=hunt)
+
 @app.route("/teacher/hunt/<int:hunt_id>/view")
 def view_hunt(hunt_id):
     if 'user_type' not in session or session['user_type'] != 'teacher':

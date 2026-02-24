@@ -623,8 +623,12 @@
         <button onclick="toggleHuntActive({{ hunt.id }})" class="big-btn btn-status">
             {{ '⛔ Deactivate' if hunt.is_active else '✅ Activate' }} Hunt
         </button>
+        <a href="{{ url_for('bulk_add_questions', hunt_id=hunt.id) }}" class="big-btn"
+            style="background: var(--secondary); color: white;">
+            📍 Add Station (Batch)
+        </a>
         <a href="{{ url_for('add_question', hunt_id=hunt.id) }}" class="big-btn btn-add">
-            ➕ Add Question
+            ➕ Add Single Question
         </a>
     </div>
 
