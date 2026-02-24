@@ -106,6 +106,10 @@ def home():
             return redirect(url_for('student_dashboard'))
     return render_template('index.html')
 
+@app.route("/health")
+def health_check():
+    return "OK", 200
+
 # Teacher Routes
 @app.route("/teacher/register", methods=['GET', 'POST'])
 def teacher_register():
