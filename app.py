@@ -260,8 +260,10 @@ def create_hunt_with_questions():
             correct_answer = q_data.get('answer', '').strip()
             next_location_hint = q_data.get('nextLocationHint', '').strip()
             points = int(q_data.get('points', 10))
+            # New: respect the is_new_location flag from the frontend
+            is_new = q_data.get('is_new_location', True if i == 1 else False)
 
-            if not text or not correct_answer:
+            if not text or (not correct_answer and question_type != 'image'):
                 continue
 
             # Process choices for multiple-choice
@@ -283,7 +285,7 @@ def create_hunt_with_questions():
                 next_location_hint=next_location_hint,
                 qr_token=str(uuid.uuid4()),
                 points=points,
-                is_new_location=True if i == 1 else False # Only first question has QR in batch
+                is_new_location=is_new
             )
             db.session.add(question)
 
