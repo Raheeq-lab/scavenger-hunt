@@ -625,14 +625,14 @@
 
                     // Setup next button
                     if (data.next_qr_token) {
-                        nextBtn.textContent = data.next_is_new_location ? 'GO TO NEXT LOCATION 📍' : 'NEXT QUESTION ⏩';
+                        nextBtn.textContent = data.next_is_new_location ? 'GO TO NEXT LOCATION 📍' : 'GO TO NEXT QUESTION ⏩';
                         nextBtn.onclick = function () {
                             window.location.href = `/student/question/${data.next_qr_token}`;
                         };
                     } else {
-                        nextBtn.textContent = '🏁 FINISH ADVENTURE';
+                        nextBtn.textContent = '🏁 VIEW FULL SUMMARY';
                         nextBtn.onclick = function () {
-                            window.location.href = '/student/dashboard';
+                            window.location.href = `/student/hunt/${'{{ hunt.id }}'}/summary`;
                         };
                     }
                 } else {

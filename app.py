@@ -723,13 +723,15 @@ def submit_answer():
     progress = session['progress'][hunt_id_str]
     if 'attempts' not in progress:
         progress['attempts'] = {}
+    if 'question_scores' not in progress:
+        progress['question_scores'] = {}
 
     # Check if already completed
     if qr_token in progress.get('completed_questions', []):
         return jsonify({
             'success': True,
             'correct': True,
-            'points_earned': 0,
+            'points_earned': progress['question_scores'].get(qr_token, 0),
             'message': 'Question already completed',
             'total_score': progress['score']
         })
@@ -745,7 +747,6 @@ def submit_answer():
     elif question.question_type == 'text':
         is_correct = answer.lower().strip() == question.correct_answer.lower().strip()
     elif question.question_type == 'image':
-        # For image questions, any uploaded image is considered correct
         is_correct = True
 
     # Point degradation and move-on logic
@@ -753,34 +754,34 @@ def submit_answer():
     force_move_on = False
     
     if is_correct:
-        if qr_token not in progress.get('completed_questions', []):
-            if question.question_type == 'multiple-choice':
-                if current_attempts == 1: multiplier = 1.0
-                elif current_attempts == 2: multiplier = 0.5
-                elif current_attempts == 3: multiplier = 0.2
-                else: multiplier = 0.0
-            else:
-                multiplier = 1.0
+        if question.question_type == 'multiple-choice':
+            if current_attempts == 1: multiplier = 1.0
+            elif current_attempts == 2: multiplier = 0.5
+            elif current_attempts == 3: multiplier = 0.2
+            else: multiplier = 0.0
+        else:
+            multiplier = 1.0
 
-            points_earned = int(question.points * multiplier)
-            if qr_token not in progress['completed_questions']:
-                progress['completed_questions'].append(qr_token)
-                progress['score'] += points_earned
-                progress['current_question'] = question.question_order + 1
+        points_earned = int(question.points * multiplier)
+        if qr_token not in progress['completed_questions']:
+            progress['completed_questions'].append(qr_token)
+            progress['score'] += points_earned
+            progress['question_scores'][qr_token] = points_earned
+            progress['current_question'] = question.question_order + 1
     else:
         # WRONG ANSWER LOGIC
         if question.question_type == 'text':
-            # Text questions: one fail and you're out
             force_move_on = True
             if qr_token not in progress['completed_questions']:
                 progress['completed_questions'].append(qr_token)
+                progress['question_scores'][qr_token] = 0
                 progress['current_question'] = question.question_order + 1
         elif question.question_type == 'multiple-choice':
-            # MC questions: 3 fails and you're out
             if current_attempts >= 3:
                 force_move_on = True
                 if qr_token not in progress['completed_questions']:
                     progress['completed_questions'].append(qr_token)
+                    progress['question_scores'][qr_token] = 0
                     progress['current_question'] = question.question_order + 1
 
     session.modified = True
@@ -808,6 +809,41 @@ def submit_answer():
     }
 
     return jsonify(response)
+
+@app.route("/student/hunt/<int:hunt_id>/summary")
+def hunt_summary(hunt_id):
+    if 'progress' not in session or str(hunt_id) not in session['progress']:
+        flash('Progress not found', 'warning')
+        return redirect(url_for('student_dashboard'))
+
+    hunt = Hunt.query.get_or_404(hunt_id)
+    progress = session['progress'][str(hunt_id)]
+    
+    # Get all questions for this hunt
+    questions = Question.query.filter_by(hunt_id=hunt_id).order_by(Question.question_order).all()
+    
+    # Enrich questions with student performance
+    summary_data = []
+    total_possible_points = 0
+    
+    for q in questions:
+        q_score = progress.get('question_scores', {}).get(q.qr_token, 0)
+        attempts = progress.get('attempts', {}).get(q.qr_token, 0)
+        completed = q.qr_token in progress.get('completed_questions', [])
+        
+        summary_data.append({
+            'question': q,
+            'score': q_score,
+            'attempts': attempts,
+            'completed': completed
+        })
+        total_possible_points += q.points
+
+    return render_template('hunt_summary.html', 
+                         hunt=hunt, 
+                         summary=summary_data, 
+                         total_score=progress.get('score', 0),
+                         total_possible=total_possible_points)
 
 @app.route("/api/student/submit-image", methods=['POST'])
 def submit_image():
@@ -866,6 +902,18 @@ def submit_image():
     progress = session['progress'][hunt_id_str]
     if 'attempts' not in progress:
         progress['attempts'] = {}
+    if 'question_scores' not in progress:
+        progress['question_scores'] = {}
+
+    # Check if already completed
+    if qr_token in progress.get('completed_questions', []):
+        return jsonify({
+            'success': True,
+            'correct': True,
+            'points_earned': progress['question_scores'].get(qr_token, 0),
+            'image_url': f"/static/uploads/{unique_filename}",
+            'total_score': progress['score']
+        })
 
     # Increment attempts for this question
     current_attempts = progress['attempts'].get(qr_token, 0) + 1
@@ -874,23 +922,11 @@ def submit_image():
     # For image questions, always count as correct
     points_earned = 0
     if qr_token not in progress['completed_questions']:
-        # Point degradation logic:
-        # 1st attempt: 100%
-        # 2nd attempt: 50%
-        # 3rd attempt: 10%
-        # 4th+ attempt: 0%
-        if current_attempts == 1:
-            multiplier = 1.0
-        elif current_attempts == 2:
-            multiplier = 0.5
-        elif current_attempts == 3:
-            multiplier = 0.1
-        else:
-            multiplier = 0.0
-
-        points_earned = int(question.points * multiplier)
+        # Photos give 100% points on first upload
+        points_earned = question.points
         progress['completed_questions'].append(qr_token)
         progress['score'] += points_earned
+        progress['question_scores'][qr_token] = points_earned
         progress['current_question'] = question.question_order + 1
 
     session.modified = True
@@ -910,7 +946,8 @@ def submit_image():
         'next_location_hint': question.next_location_hint,
         'next_qr_token': next_question.qr_token if next_question else None,
         'next_is_new_location': next_question.is_new_location if next_question else False,
-        'has_next': next_question is not None
+        'has_next': next_question is not None,
+        'completion_message': "🎉 Photo Challenge Complete! Hunt Finished!" if not next_question else None
     })
 
 @app.route("/student/progress/<int:hunt_id>")

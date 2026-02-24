@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Hunt Summary - {{ hunt.name }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #2E7D32;
+            --secondary: #2196F3;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --radius: 24px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #6366f1, #a855f7);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+        }
+
+        .summary-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .total-score-badge {
+            background: var(--text);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .total-score-badge h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .total-score-badge span {
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            opacity: 0.7;
+        }
+
+        .hunt-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .hunt-meta {
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .questions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .question-item {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 18px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: 0.2s;
+        }
+
+        .question-item:hover {
+            border-color: var(--secondary);
+            transform: translateX(5px);
+        }
+
+        .item-status {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .status-perfect {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-partial {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .status-failed {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .item-content {
+            flex-grow: 1;
+        }
+
+        .item-text {
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text);
+        }
+
+        .item-meta {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .item-points {
+            text-align: right;
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .dashboard-btn {
+            background: var(--text);
+            color: white;
+            text-decoration: none;
+            padding: 20px;
+            border-radius: 20px;
+            display: block;
+            text-align: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            transition: 0.3s;
+        }
+
+        .dashboard-btn:hover {
+            background: #000;
+            transform: scale(1.02);
+        }
+
+        .trophy-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="summary-container">
+        <div class="header">
+            <span class="trophy-icon">🏆</span>
+            <div class="total-score-badge">
+                <span>Total Score</span>
+                <h1>{{ total_score }}</h1>
+                <span>out of {{ total_possible }} pts</span>
+            </div>
+            <h2 class="hunt-title">{{ hunt.name }}</h2>
+            <p class="hunt-meta">Adventurer Summary • {{ summary|length }} Questions Complete</p>
+        </div>
+
+        <div class="questions-list">
+            {% for item in summary %}
+            <div class="question-item">
+                <div
+                    class="item-status {% if item.score == item.question.points %}status-perfect{% elif item.score > 0 %}status-partial{% else %}status-failed{% endif %}">
+                    {% if item.score == item.question.points %}✅
+                    {% elif item.score > 0 %}🟡
+                    {% else %}❌{% endif %}
+                </div>
+                <div class="item-content">
+                    <div class="item-text">{{ item.question.text }}</div>
+                    <div class="item-meta">
+                        {% if item.question.question_type == 'multiple-choice' %}
+                        Multiple Choice • {{ item.attempts }} attempt(s)
+                        {% elif item.question.question_type == 'text' %}
+                        Text Challenge
+                        {% else %}
+                        Photo Quest
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="item-points">
+                    {{ item.score }} / {{ item.question.points }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <a href="{{ url_for('student_dashboard') }}" class="dashboard-btn">RETURN TO DASHBOARD</a>
+    </div>
+
+    <script>
+        // Finale celebration!
+        window.addEventListener('load', () => {
+            const duration = 3 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#6366f1', '#a855f7', '#4CAF50']
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#6366f1', '#a855f7', '#4CAF50']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        });
+    </script>
+</body>
+
+</html>
