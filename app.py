@@ -70,6 +70,7 @@ class Question(db.Model):
     next_location_hint = db.Column(db.Text)  # Hint for NEXT location
     qr_token = db.Column(db.String(100), unique=True)
     points = db.Column(db.Integer, default=10)
+    is_new_location = db.Column(db.Boolean, default=True)  # True if this question starts a new QR station
     image_filename = db.Column(db.String(200))  # For image questions
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -277,7 +278,8 @@ def create_hunt_with_questions():
                 hint='',  # Your form doesn't have a hint field
                 next_location_hint=next_location_hint,
                 qr_token=str(uuid.uuid4()),
-                points=points
+                points=points,
+                is_new_location=True if i == 1 else False # Only first question has QR in batch
             )
             db.session.add(question)
 
@@ -314,6 +316,7 @@ def add_question(hunt_id):
         hint = request.form.get('hint', '')
         next_location_hint = request.form.get('next_location_hint', '')
         points = int(request.form.get('points', 10))
+        is_new_location = 'is_new_location' in request.form
 
         # Get next question order
         last_question = Question.query.filter_by(hunt_id=hunt_id).order_by(Question.question_order.desc()).first()
@@ -339,7 +342,8 @@ def add_question(hunt_id):
             hint=hint,
             next_location_hint=next_location_hint,
             qr_token=str(uuid.uuid4()),
-            points=points
+            points=points,
+            is_new_location=is_new_location
         )
 
         db.session.add(question)
@@ -462,6 +466,7 @@ def edit_question(question_id):
         question.hint = request.form.get('hint', '')
         question.next_location_hint = request.form.get('next_location_hint', '')
         question.points = int(request.form.get('points', 10))
+        question.is_new_location = 'is_new_location' in request.form
 
         # Process choices for multiple-choice
         if question.question_type == 'multiple-choice':
@@ -702,6 +707,7 @@ def submit_answer():
         'hint': question.hint if not is_correct else None,
         'next_location_hint': question.next_location_hint if is_correct else None,
         'next_qr_token': next_question.qr_token if next_question else None,
+        'next_is_new_location': next_question.is_new_location if next_question else False,
         'has_next': next_question is not None,
         'is_last_question': next_question is None,
         'completion_message': "🎉 Congratulations! You've completed the entire hunt!" if not next_question and is_correct else None
@@ -809,6 +815,7 @@ def submit_image():
         'image_url': f"/static/uploads/{unique_filename}",
         'next_location_hint': question.next_location_hint,
         'next_qr_token': next_question.qr_token if next_question else None,
+        'next_is_new_location': next_question.is_new_location if next_question else False,
         'has_next': next_question is not None
     })
 
@@ -866,6 +873,13 @@ def internal_error(error):
 # Initialize database
 with app.app_context():
     db.create_all()
+    # Migration: Add is_new_location column if it doesn't exist
+    try:
+        from sqlalchemy import text
+        db.session.execute(text('ALTER TABLE question ADD COLUMN is_new_location BOOLEAN DEFAULT TRUE'))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
