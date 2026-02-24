@@ -106,7 +106,7 @@
 
         /* Station Styling */
         .station-group {
-            margin-bottom: 3rem;
+            margin-bottom: 4rem;
             position: relative;
         }
 
@@ -139,9 +139,9 @@
 
         .station-remove {
             margin-left: auto;
-            color: #64748b;
+            color: #94a3b8;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             transition: 0.2s;
         }
@@ -195,7 +195,7 @@
             border: 1px solid var(--border);
             position: relative;
             animation: slideUp 0.3s ease;
-            margin-left: 2rem;
+            margin-left: 2.5rem;
         }
 
         .question-card::before {
@@ -238,8 +238,9 @@
         .q-number {
             font-weight: 700;
             color: var(--text-light);
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .remove-btn {
@@ -366,6 +367,46 @@
             font-size: 0.75rem;
         }
 
+        .inner-add-q-btn {
+            background: #f8fafc;
+            border: 1px dashed var(--border);
+            width: calc(100% - 2.5rem);
+            margin-left: 2.5rem;
+            padding: 12px;
+            border-radius: 12px;
+            color: var(--secondary);
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .inner-add-q-btn:hover {
+            background: #eff6ff;
+            border-color: var(--secondary);
+            transform: scale(1.01);
+        }
+
+        .inner-add-q-btn:disabled {
+            color: #94a3b8;
+            border-color: var(--border);
+            cursor: not-allowed;
+            background: #f1f5f9;
+        }
+
+        /* Clue Indicator */
+        .clue-section {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
         /* Footer Actions */
         .footer-actions {
             position: fixed;
@@ -447,13 +488,23 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* Animation for batch reveal */
+        .batch-clue-msg {
+            color: #d97706;
+            font-size: 0.75rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
     </style>
 </head>
 
 <body>
     <div class="navbar">
         <div class="logo">🎯 Scavenger Hunt</div>
-        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-light);">Teacher Console</div>
+        <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-light);">Designer</div>
     </div>
 
     <div class="container">
@@ -461,7 +512,7 @@
 
         <div class="header-section">
             <h1>Create New Hunt</h1>
-            <p style="color: var(--text-light);">Design multi-location adventures for your students.</p>
+            <p style="color: var(--text-light);">Add up to 10 questions per location (QR code).</p>
         </div>
 
         <div class="setup-card">
@@ -469,12 +520,11 @@
             <div class="form-group">
                 <label>Hunt Name *</label>
                 <input type="text" id="huntName" placeholder="e.g., Campus History Tour" required>
-                <p class="help-text">What will students see as the title?</p>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <label>Description (Optional)</label>
-                <textarea id="huntDescription" placeholder="A short introduction for your students..."
-                    style="min-height: 100px;"></textarea>
+                <textarea id="huntDescription" placeholder="Introduce the hunt to your students..."
+                    style="min-height: 80px;"></textarea>
             </div>
         </div>
 
@@ -483,15 +533,15 @@
         </div>
 
         <div class="add-actions">
-            <button class="add-btn" onclick="addNewStation(false)">
+            <button class="add-btn" onclick="addNewStation(1)">
                 <span>➕</span>
-                <strong>Add Single Question</strong>
-                <small>(Creates 1 new location/QR)</small>
+                <strong>Add New Location</strong>
+                <small>(Starts with 1 question/QR)</small>
             </button>
-            <button class="add-btn" onclick="addNewStation(true)">
+            <button class="add-btn" onclick="addNewStation(3)">
                 <span>📍</span>
                 <strong>Add Station (Batch)</strong>
-                <small>(3 questions per single QR code)</small>
+                <small>(Starts with 3 questions/QR)</small>
             </button>
         </div>
     </div>
@@ -514,52 +564,56 @@
 
     <script>
         let stationCount = 0;
-        let questionTotal = 0;
 
-        function addNewStation(isBatch) {
+        function addNewStation(initialQuestionCount) {
             stationCount++;
             const container = document.getElementById('stationsContainer');
-            const stationId = Date.now();
+            const stationId = 's' + Date.now();
 
             const stationDiv = document.createElement('div');
             stationDiv.className = 'station-group';
             stationDiv.id = `station-${stationId}`;
-            stationDiv.setAttribute('data-station-index', stationCount);
 
             stationDiv.innerHTML = `
                 <div class="station-header">
                     <div class="station-icon">📍</div>
-                    <div class="station-title">Location #${stationCount} ${isBatch ? '<span style="color:var(--secondary); font-size:0.7rem;">(BATCH)</span>' : ''}</div>
+                    <div class="station-title">Location #${stationCount}</div>
                     <div class="station-remove" onclick="removeStation('${stationId}')">Remove Location</div>
                 </div>
                 <div class="questions-list"></div>
+                <button class="inner-add-q-btn" onclick="addQuestionToStation('${stationId}')" id="btn-add-${stationId}">
+                    ➕ Add Question to this Location (<span class="q-left">10</span> left)
+                </button>
             `;
 
             container.appendChild(stationDiv);
 
-            const count = isBatch ? 3 : 1;
-            for (let i = 0; i < count; i++) {
+            for (let i = 0; i < initialQuestionCount; i++) {
                 addQuestionToStation(stationId);
             }
 
-            updateStats();
             stationDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            updateStats();
         }
 
         function addQuestionToStation(stationId) {
-            questionTotal++;
             const stationDiv = document.getElementById(`station-${stationId}`);
             const list = stationDiv.querySelector('.questions-list');
-            const qId = Date.now() + Math.random();
 
+            if (list.children.length >= 10) {
+                alert("Maximum 10 questions per location.");
+                return;
+            }
+
+            const qId = 'q' + Date.now() + Math.random().toString(36).substr(2, 5);
             const card = document.createElement('div');
             card.className = 'question-card';
-            card.id = `q-${qId}`;
+            card.id = qId;
 
             card.innerHTML = `
                 <div class="q-header">
-                    <span class="q-number">Question</span>
-                    <button class="remove-btn" onclick="removeQuestion('${qId}', '${stationId}')">Remove</button>
+                    <span class="q-number">Question #${list.children.length + 1}</span>
+                    <button class="remove-btn" onclick="removeQuestion('${qId}', '${stationId}')">✕</button>
                 </div>
                 <div class="q-body">
                     <div class="type-grid">
@@ -576,29 +630,35 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Question Content *</label>
-                        <textarea class="q-text" placeholder="What is the challenge at this location?" required style="min-height: 80px;"></textarea>
+                        <label>Question *</label>
+                        <textarea class="q-text" placeholder="What is the task?" required style="min-height: 80px;"></textarea>
                     </div>
 
                     <div class="answer-group">
                         <div class="form-group">
                             <label>Correct Answer *</label>
-                            <input type="text" class="q-answer" placeholder="Expected student response...">
+                            <input type="text" class="q-answer" placeholder="Exact answer...">
                         </div>
                     </div>
 
                     <div class="choices-area">
-                        <label style="margin-bottom: 0.8rem; display: block; font-size: 0.85rem;">Multiple Choice Palette</label>
+                        <label style="margin-bottom: 0.8rem; display: block; font-size: 0.8rem;">Options</label>
                         <div class="choice-row"><input type="radio" name="correct_${qId}" value="0" onchange="syncAnswer('${qId}', 0)"><input type="text" class="choice-val" placeholder="Option A" oninput="updateSync('${qId}', 0)"></div>
                         <div class="choice-row"><input type="radio" name="correct_${qId}" value="1" onchange="syncAnswer('${qId}', 1)"><input type="text" class="choice-val" placeholder="Option B" oninput="updateSync('${qId}', 1)"></div>
                         <div class="choice-row"><input type="radio" name="correct_${qId}" value="2" onchange="syncAnswer('${qId}', 2)"><input type="text" class="choice-val" placeholder="Option C" oninput="updateSync('${qId}', 2)"></div>
                         <div class="choice-row"><input type="radio" name="correct_${qId}" value="3" onchange="syncAnswer('${qId}', 3)"><input type="text" class="choice-val" placeholder="Option D" oninput="updateSync('${qId}', 3)"></div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label>Next Clue</label>
-                            <input type="text" class="q-next" placeholder="Where is the next QR?">
+                    <div style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1rem; margin-top: 1rem;">
+                        <div class="q-next-container" style="display: none;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>📍 Location Clue (Next QR)</label>
+                                <input type="text" class="q-next" placeholder="e.g. Near the fountain...">
+                                <small style="font-size:0.7rem; color:var(--text-light);">Only the last question of a station has this hint.</small>
+                            </div>
+                        </div>
+                        <div class="batch-msg-container" style="display: flex; align-items: center;">
+                            <span class="batch-clue-msg">⛓️ Linked to station chain</span>
                         </div>
                         <div class="form-group" style="margin-bottom: 0;">
                             <label>Points</label>
@@ -607,8 +667,38 @@
                     </div>
                 </div>
             `;
+
             list.appendChild(card);
+            refreshStationQuestions(stationId);
             updateStats();
+        }
+
+        function refreshStationQuestions(stationId) {
+            const stationDiv = document.getElementById(`station-${stationId}`);
+            const list = stationDiv.querySelector('.questions-list');
+            const questions = list.children;
+
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                q.querySelector('.q-number').textContent = `Question #${i + 1}`;
+
+                const nextContainer = q.querySelector('.q-next-container');
+                const batchMsg = q.querySelector('.batch-msg-container');
+
+                // Only SHOW Next Clue for the VERY LAST question in the station
+                if (i === questions.length - 1) {
+                    nextContainer.style.display = 'block';
+                    batchMsg.style.display = 'none';
+                } else {
+                    nextContainer.style.display = 'none';
+                    batchMsg.style.display = 'flex';
+                }
+            }
+
+            const addBtn = document.getElementById(`btn-add-${stationId}`);
+            const remaining = 10 - questions.length;
+            addBtn.querySelector('.q-left').textContent = remaining;
+            addBtn.disabled = remaining <= 0;
         }
 
         function removeStation(id) {
@@ -618,38 +708,37 @@
         }
 
         function removeQuestion(qId, stationId) {
-            const card = document.getElementById(`q-${qId}`);
             const station = document.getElementById(`station-${stationId}`);
-            const questions = station.querySelectorAll('.question-card');
+            const card = document.getElementById(qId);
+            const list = station.querySelector('.questions-list');
 
-            if (questions.length === 1) {
+            if (list.children.length === 1) {
                 removeStation(stationId);
             } else {
                 card.remove();
+                refreshStationQuestions(stationId);
                 updateStats();
             }
         }
 
         function setType(id, type) {
-            const card = document.getElementById(`q-${id}`);
+            const card = document.getElementById(id);
             card.querySelector('.q-type').value = type;
             card.querySelectorAll('.type-option').forEach(opt => opt.classList.toggle('active', opt.dataset.type === type));
-            const answerGroup = card.querySelector('.answer-group');
-            const choicesArea = card.querySelector('.choices-area');
-            choicesArea.style.display = type === 'multiple-choice' ? 'block' : 'none';
-            answerGroup.style.display = type === 'text' ? 'block' : 'none';
+            card.querySelector('.choices-area').style.display = type === 'multiple-choice' ? 'block' : 'none';
+            card.querySelector('.answer-group').style.display = type === 'text' ? 'block' : 'none';
             if (type === 'image') card.querySelector('.q-answer').value = 'image_accepted';
             else if (type === 'text' && card.querySelector('.q-answer').value === 'image_accepted') card.querySelector('.q-answer').value = '';
         }
 
         function syncAnswer(id, index) {
-            const card = document.getElementById(`q-${id}`);
+            const card = document.getElementById(id);
             const choices = card.querySelectorAll('.choice-val');
             card.querySelector('.q-answer').value = choices[index].value;
         }
 
         function updateSync(id, index) {
-            const card = document.getElementById(`q-${id}`);
+            const card = document.getElementById(id);
             const radio = card.querySelectorAll('input[type="radio"]')[index];
             if (radio.checked) syncAnswer(id, index);
         }
@@ -661,13 +750,13 @@
             document.getElementById('totalQuestions').textContent = questions.length;
 
             stations.forEach((s, idx) => {
-                s.querySelector('.station-title').childNodes[0].textContent = `Location #${idx + 1} `;
+                s.querySelector('.station-title').textContent = `Location #${idx + 1}`;
             });
         }
 
         async function saveHunt() {
             const huntName = document.getElementById('huntName').value.trim();
-            if (!huntName) { alert("Hunt Name is required."); return; }
+            if (!huntName) { alert("Enter a Hunt Name."); return; }
 
             const stations = document.querySelectorAll('.station-group');
             if (stations.length === 0) { alert("Add at least one location."); return; }
@@ -683,7 +772,7 @@
                     const answer = card.querySelector('.q-answer').value.trim();
 
                     if (!text || (!answer && type !== 'image')) {
-                        alert("Please fill in all required question and answer fields.");
+                        alert("Please fill in all blanks.");
                         isValid = false;
                         return;
                     }
@@ -693,9 +782,8 @@
                         const choiceInputs = card.querySelectorAll('.choice-val');
                         choices = Array.from(choiceInputs).map(ci => ci.value.trim());
                         if (choices.filter(v => v).length < 2) {
-                            alert("Multiple choice needs at least 2 options.");
-                            isValid = false;
-                            return;
+                            alert("Needs at least 2 choices.");
+                            isValid = false; return;
                         }
                     }
 
@@ -703,10 +791,10 @@
                         type: type,
                         text: text,
                         answer: answer,
-                        nextLocationHint: card.querySelector('.q-next').value.trim(),
+                        nextLocationHint: card.querySelector('.q-next') ? card.querySelector('.q-next').value.trim() : "",
                         points: parseInt(card.querySelector('.q-points').value) || 10,
                         choices: choices,
-                        is_new_location: qIdx === 0 // First question in station starts the location (QR)
+                        is_new_location: qIdx === 0
                     });
                 });
             });
@@ -715,7 +803,7 @@
 
             const saveBtn = document.getElementById('saveBtn');
             saveBtn.disabled = true;
-            saveBtn.innerHTML = '<span class="loading-spinner"></span> PUBLISHING...';
+            saveBtn.innerHTML = '<span class="loading-spinner"></span> CREATING...';
 
             try {
                 const response = await fetch('/teacher/create-hunt-with-questions', {
@@ -728,13 +816,12 @@
                     })
                 });
                 const data = await response.json();
-                if (data.success) window.location.href = data.redirect_url || '/teacher/dashboard';
+                if (data.success) window.location.href = data.redirect_url;
                 else { alert(data.error); saveBtn.disabled = false; saveBtn.innerHTML = "🚀 START ADVENTURE"; }
-            } catch (e) { alert("Network error."); saveBtn.disabled = false; saveBtn.innerHTML = "🚀 START ADVENTURE"; }
+            } catch (e) { alert("Failed to save."); saveBtn.disabled = false; saveBtn.innerHTML = "🚀 START ADVENTURE"; }
         }
 
-        // Add initial station
-        addNewStation(false);
+        addNewStation(1);
     </script>
 </body>
 
