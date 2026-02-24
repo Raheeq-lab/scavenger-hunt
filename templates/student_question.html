@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Scavenger Hunt Question</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .question-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            max-width: 800px;
+            width: 100%;
+        }
+        .hunt-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            border-left: 5px solid #4CAF50;
+        }
+        .hunt-name {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .question-content {
+            margin-bottom: 30px;
+        }
+        .question-text {
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        .question-image {
+            max-width: 100%;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 3px solid #f0f0f0;
+        }
+
+        /* Multiple Choice Styles */
+        .choices-container {
+            margin: 25px 0;
+        }
+        .choice-option {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border: 2px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .choice-option:hover {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+        .choice-option.selected {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+
+        /* Text Answer Styles */
+        .text-answer {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.1em;
+            margin: 20px 0;
+        }
+        .text-answer:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        /* Image Upload Styles */
+        .image-upload-area {
+            border: 3px dashed #4CAF50;
+            padding: 40px;
+            text-align: center;
+            border-radius: 15px;
+            background: #f8fff8;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .image-upload-area:hover {
+            background: #f0fff0;
+            border-color: #2E7D32;
+        }
+        .image-upload-area.drag-over {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+            border-style: solid;
+        }
+        .upload-icon {
+            font-size: 3em;
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+        .upload-text {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        /* Buttons */
+        .submit-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3);
+        }
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 8px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Result Messages */
+        .result-message {
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .correct {
+            background: #e8f5e9;
+            color: #2E7D32;
+            border: 2px solid #4CAF50;
+        }
+        .incorrect {
+            background: #ffebee;
+            color: #c62828;
+            border: 2px solid #ff4444;
+        }
+        .clue {
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 2px solid #2196F3;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        .next-btn {
+            background: linear-gradient(135deg, #2196F3 0%, #0D47A1 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        /* Preview image */
+        .preview-image {
+            max-width: 200px;
+            max-height: 200px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #ddd;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="question-container">
+        <!-- Hunt Header -->
+        <div class="hunt-header">
+            <div class="hunt-name">
+                <span>🎯</span> {{ hunt.name }}
+            </div>
+            <div style="color: #666;">Question {{ question.question_order }} • {{ question.points }} points</div>
+        </div>
+
+        <!-- Question Content -->
+        <div class="question-content">
+            <div class="question-text">
+                {{ question.text }}
+            </div>
+
+            {% if question.question_type == 'image' and question.image_filename %}
+            <img src="{{ url_for('static', filename='uploads/' + question.image_filename) }}"
+                 alt="Question Image"
+                 class="question-image"
+                 onerror="this.style.display='none'">
+            {% endif %}
+
+            <!-- Multiple Choice -->
+            {% if question.question_type == 'multiple-choice' %}
+            <div class="choices-container">
+                {% for choice in choices %}
+                <div class="choice-option" data-choice="{{ choice }}">
+                    {{ choice }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Text Answer -->
+            {% if question.question_type == 'text' %}
+            <input type="text" class="text-answer" id="textAnswer" placeholder="Type your answer here...">
+            {% endif %}
+
+            <!-- Image Upload -->
+            {% if question.question_type == 'image' %}
+            <div class="image-upload-area" id="uploadArea">
+                <div class="upload-icon">📷</div>
+                <div class="upload-text">Click to upload or drag & drop an image</div>
+                <div style="font-size: 0.9em; color: #888; margin-top: 10px;">
+                    Max size: 5MB • Formats: JPG, PNG, GIF
+                </div>
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                <div id="fileName" style="color: #666; margin-top: 10px;"></div>
+                <img id="previewImage" class="preview-image" style="display: none;">
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Result Messages -->
+        <div class="result-message" id="resultMessage"></div>
+
+        <div class="clue" id="clueMessage">
+            <div id="clueText"></div>
+            <button class="next-btn" id="nextBtn">Continue to Next Location</button>
+        </div>
+
+        <!-- Submit Button -->
+        <button class="submit-btn" id="submitBtn">
+            {% if question.question_type == 'image' %}📸 Submit Photo
+            {% else %}✅ Submit Answer{% endif %}
+        </button>
+
+        <!-- Back to Dashboard Link -->
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/student/dashboard" style="color: #666; text-decoration: none;">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        // Debug info
+        console.log("=== DEBUG: Page loaded ===");
+        console.log("Question type:", '{{ question.question_type }}');
+        console.log("QR Token:", '{{ question.qr_token }}');
+        console.log("Question ID:", {{ question.id }});
+
+        const questionType = '{{ question.question_type }}';
+        const qrToken = '{{ question.qr_token }}';
+        let selectedChoice = null;
+        let uploadedFile = null;
+        let imagePreviewUrl = null;
+
+        // Initialize based on question type
+        if (questionType === 'multiple-choice') {
+            console.log("Setting up multiple-choice options");
+            document.querySelectorAll('.choice-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    console.log("Choice clicked:", this.dataset.choice);
+                    // Remove previous selection
+                    document.querySelectorAll('.choice-option').forEach(o => o.classList.remove('selected'));
+                    // Add selection to this option
+                    this.classList.add('selected');
+                    selectedChoice = this.dataset.choice;
+                });
+            });
+        }
+
+        // Image upload handling
+        if (questionType === 'image') {
+            const imageUpload = document.getElementById('imageUpload');
+            const uploadArea = document.getElementById('uploadArea');
+            const previewImage = document.getElementById('previewImage');
+            const fileName = document.getElementById('fileName');
+
+            // Click to upload
+            uploadArea.addEventListener('click', function(e) {
+                if (e.target !== imageUpload) {
+                    imageUpload.click();
+                }
+            });
+
+            // File selection
+            imageUpload.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                handleImageFile(file);
+            });
+
+            // Drag and drop
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                this.classList.remove('drag-over');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) {
+                    handleImageFile(file);
+                } else {
+                    alert('Please drop an image file (JPG, PNG, GIF)');
+                }
+            });
+
+            function handleImageFile(file) {
+                if (!file) return;
+
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Invalid file type. Please upload an image (JPG, PNG, GIF)');
+                    return;
+                }
+
+                // Validate file size (5MB max)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('File too large. Maximum size is 5MB');
+                    return;
+                }
+
+                uploadedFile = file;
+                fileName.textContent = `Selected: ${file.name} (${Math.round(file.size/1024)}KB)`;
+
+                // Create preview
+                if (imagePreviewUrl) {
+                    URL.revokeObjectURL(imagePreviewUrl);
+                }
+
+                imagePreviewUrl = URL.createObjectURL(file);
+                previewImage.src = imagePreviewUrl;
+                previewImage.style.display = 'block';
+
+                // Scroll to show preview
+                previewImage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                console.log("Image selected:", file.name, "Size:", file.size);
+            }
+        }
+
+        // Submit answer
+        document.getElementById('submitBtn').addEventListener('click', submitAnswer);
+
+        // Add Enter key support for text answers
+        if (questionType === 'text') {
+            document.getElementById('textAnswer').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitAnswer();
+                }
+            });
+        }
+
+        function submitAnswer() {
+            console.log("=== submitAnswer() called ===");
+            let answer = '';
+
+            // Get answer based on question type
+            if (questionType === 'multiple-choice') {
+                if (!selectedChoice) {
+                    alert('Please select an answer');
+                    return;
+                }
+                answer = selectedChoice;
+                console.log("Selected answer:", answer);
+            }
+            else if (questionType === 'text') {
+                answer = document.getElementById('textAnswer').value.trim();
+                if (!answer) {
+                    alert('Please enter your answer');
+                    return;
+                }
+                console.log("Text answer:", answer);
+            }
+            else if (questionType === 'image') {
+                if (!uploadedFile) {
+                    alert('Please upload an image');
+                    return;
+                }
+                answer = 'image_upload';
+                console.log("Image uploaded:", uploadedFile.name);
+            }
+
+            // Disable button and show loading
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading-spinner"></span>Checking...';
+            btn.disabled = true;
+
+            // Handle image upload separately
+            if (questionType === 'image' && uploadedFile) {
+                submitImageAnswer();
+                return;
+            }
+
+            console.log("Sending to server:", { qr_token: qrToken, answer: answer });
+
+            // Send to server for text/multiple-choice
+            fetch('/api/student/submit-answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    qr_token: qrToken,
+                    answer: answer
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("=== DEBUG RESPONSE ===");
+                console.log("Full response:", data);
+                console.log("Is correct?", data.correct);
+                console.log("Next location hint:", data.next_location_hint);
+                console.log("=== END DEBUG ===");
+
+                handleResponse(data, btn, originalText);
+            })
+            .catch(error => {
+                console.error("Fetch error:", error);
+                alert('Network error. Please try again.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        function submitImageAnswer() {
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerHTML;
+
+            const formData = new FormData();
+            formData.append('image', uploadedFile);
+            formData.append('qr_token', qrToken);
+
+            fetch('/api/student/submit-image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("=== IMAGE UPLOAD RESPONSE ===");
+                console.log("Full response:", data);
+                handleResponse(data, btn, originalText);
+            })
+            .catch(error => {
+                console.error("Image upload error:", error);
+                alert('Failed to upload image. Please try again.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+
+        function handleResponse(data, btn, originalText) {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            // Show result
+            const resultDiv = document.getElementById('resultMessage');
+            const clueDiv = document.getElementById('clueMessage');
+            const clueText = document.getElementById('clueText');
+            const progressFill = document.getElementById('progressFill');
+            const nextBtn = document.getElementById('nextBtn');
+
+            if (data.correct) {
+                const pointsEarned = (data.points_earned !== undefined) ? data.points_earned : 10;
+                resultDiv.textContent = '✅ Correct! +' + pointsEarned + ' points';
+                if (data.total_score !== undefined) {
+                    resultDiv.textContent += ` (Total: ${data.total_score} points)`;
+                }
+                resultDiv.className = 'result-message correct';
+
+                // Update progress bar
+                progressFill.style.width = '100%';
+
+                // Show clue if available
+                if (data.next_location_hint || data.next_qr_token) {
+                    let clueHTML = '<strong>🎉 Correct!</strong>';
+
+                    if (data.next_location_hint) {
+                        clueHTML += `<br><strong>Next Clue:</strong> ${data.next_location_hint}`;
+                    }
+
+                    if (data.image_url) {
+                        clueHTML += `<br><br><img src="${data.image_url}" class="preview-image" style="max-width: 300px;">`;
+                    }
+
+                    clueText.innerHTML = clueHTML;
+                    clueDiv.style.display = 'block';
+
+                    // Setup next button
+                    if (data.next_qr_token) {
+                        nextBtn.textContent = 'Continue to Next Location';
+                        nextBtn.onclick = function() {
+                            window.location.href = `/student/question/${data.next_qr_token}`;
+                        };
+                    } else if (data.has_next === false) {
+                        nextBtn.textContent = '🏁 Hunt Complete!';
+                        nextBtn.onclick = function() {
+                            window.location.href = '/student/dashboard';
+                        };
+                    } else {
+                        nextBtn.textContent = 'Continue';
+                        nextBtn.onclick = function() {
+                            window.location.href = '/student/dashboard';
+                        };
+                    }
+                } else if (data.completion_message) {
+                    clueText.innerHTML = `<strong>${data.completion_message}</strong>`;
+                    clueDiv.style.display = 'block';
+                    nextBtn.textContent = '🏁 Return to Dashboard';
+                    nextBtn.onclick = function() {
+                        window.location.href = '/student/dashboard';
+                    };
+                } else {
+                    // If no clue but correct, show success and redirect
+                    setTimeout(() => {
+                        if (data.next_qr_token) {
+                            window.location.href = `/student/question/${data.next_qr_token}`;
+                        } else {
+                            window.location.href = '/student/dashboard';
+                        }
+                    }, 1500);
+                }
+            } else {
+                resultDiv.textContent = '❌ Incorrect. Try again!';
+                if (data.hint) {
+                    resultDiv.textContent += ` Hint: ${data.hint}`;
+                }
+                resultDiv.className = 'result-message incorrect';
+                resultDiv.style.display = 'block';
+
+                // Reset button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+
+            if (resultDiv.style.display !== 'block') {
+                resultDiv.style.display = 'block';
+            }
+        }
+
+        // Auto-focus text input
+        if (questionType === 'text') {
+            document.getElementById('textAnswer').focus();
+        }
+
+        // Initialize progress bar based on question order
+        function updateProgressBar() {
+            const progressFill = document.getElementById('progressFill');
+            progressFill.style.width = '0%';
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgressBar();
+
+            console.log("=== DEBUG: JavaScript setup complete ===");
+        });
+
+        // Clean up object URLs when page unloads
+        window.addEventListener('beforeunload', function() {
+            if (imagePreviewUrl) {
+                URL.revokeObjectURL(imagePreviewUrl);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Hunt - {{ hunt.name }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Arial', sans-serif; background: #f5f7fa; color: #333; }
+        .navbar { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.8em; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+        .back-link { display: inline-flex; align-items: center; gap: 8px; color: #666; text-decoration: none; margin-bottom: 20px; padding: 10px 15px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .form-container { background: white; border-radius: 15px; padding: 40px; box-shadow: 0 5px 20px rgba(0,0,0,0.08); }
+        .section-title { font-size: 1.5em; color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; display: flex; align-items: center; gap: 10px; }
+        .form-group { margin-bottom: 25px; }
+        .form-label { display: block; margin-bottom: 8px; color: #555; font-weight: bold; font-size: 1.1em; }
+        .form-input, .form-textarea { width: 100%; padding: 12px 15px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1em; font-family: 'Arial', sans-serif; transition: border-color 0.3s; }
+        .form-input:focus, .form-textarea:focus { outline: none; border-color: #4CAF50; }
+        .form-textarea { min-height: 120px; resize: vertical; }
+        .btn { padding: 12px 25px; border: none; border-radius: 8px; font-size: 1em; font-weight: bold; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3); }
+        .btn-secondary { background: #f5f5f5; color: #666; border: 1px solid #ddd; }
+        .btn-secondary:hover { background: #e0e0e0; }
+        .form-actions { display: flex; gap: 15px; margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0; }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo"><span>🎯</span> Scavenger Hunt</div>
+        <div class="nav-links">
+            <a href="/teacher/dashboard" style="color: white; text-decoration: none;">Dashboard</a>
+        </div>
+    </div>
+    <div class="container">
+        <a href="{{ url_for('view_hunt', hunt_id=hunt.id) }}" class="back-link">← Back to Hunt</a>
+
+        <div class="form-container">
+            <h2 class="section-title"><span>📋</span> Edit Hunt Details</h2>
+            <form method="POST">
+                <div class="form-group">
+                    <label for="name" class="form-label">Hunt Name *</label>
+                    <input type="text" id="name" name="name" class="form-input" value="{{ hunt.name }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description" class="form-label">Description (Optional)</label>
+                    <textarea id="description" name="description" class="form-textarea">{{ hunt.description }}</textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{{ url_for('view_hunt', hunt_id=hunt.id) }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

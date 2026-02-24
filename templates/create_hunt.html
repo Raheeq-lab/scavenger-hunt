@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create New Hunt - Scavenger Hunt</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 2.2em;
+            color: #333;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 10px 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .back-link:hover {
+            background: #f8f9fa;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .form-section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: 'Arial', sans-serif;
+            transition: border-color 0.3s;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-help {
+            color: #777;
+            font-size: 0.9em;
+            margin-top: 5px;
+            font-style: italic;
+        }
+
+        .question-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .question-number {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            background: #e3f2fd;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+
+        .remove-question {
+            background: #ffebee;
+            color: #c62828;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .remove-question:hover {
+            background: #ffcdd2;
+        }
+
+        .question-type-select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 1em;
+        }
+
+        .choice-input-group {
+            margin-bottom: 10px;
+        }
+
+        .choice-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+
+        .points-input {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-add {
+            background: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            font-size: 0.9em;
+        }
+
+        .btn-add:hover {
+            background: #0D47A1;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .flash-messages {
+            margin-bottom: 30px;
+        }
+
+        .flash-success {
+            background: #e8f5e8;
+            color: #4CAF50;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #c8e6c9;
+        }
+
+        .flash-error {
+            background: #ffebee;
+            color: #ff4444;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #ffcdd2;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            .form-container {
+                padding: 25px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <div class="navbar">
+        <div class="logo">
+            <span>🎯</span>
+            Scavenger Hunt
+        </div>
+        <div class="nav-links">
+            <a href="/teacher/dashboard" class="nav-link">Dashboard</a>
+            <a href="/logout" class="nav-link">Logout</a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <a href="/teacher/dashboard" class="back-link">
+            ← Back to Dashboard
+        </a>
+
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="page-header">
+            <h1 class="page-title">Create New Scavenger Hunt</h1>
+        </div>
+
+        <form id="createHuntForm" method="POST" action="/teacher/create-hunt">
+            <div class="form-container">
+                <!-- CSRF token removed here -->
+
+                <!-- Hunt Details Section -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span>📋</span> Hunt Details
+                    </h2>
+
+                    <div class="form-group">
+                        <label for="huntName" class="form-label">Hunt Name *</label>
+                        <input type="text" id="huntName" name="name" class="form-input"
+                               placeholder="e.g., Campus History Tour, Science Lab Adventure" required>
+                        <div class="form-help">Give your hunt a descriptive name</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="huntDescription" class="form-label">Description (Optional)</label>
+                        <textarea id="huntDescription" name="description" class="form-textarea"
+                                  placeholder="Describe the scavenger hunt theme, locations, and learning objectives..."></textarea>
+                        <div class="form-help">This helps students understand what to expect</div>
+                    </div>
+                </div>
+
+                <!-- Questions Section -->
+                <div class="form-section">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 class="section-title" style="margin-bottom: 0;">
+                            <span>❓</span> Questions
+                        </h2>
+                        <button type="button" class="btn btn-add" onclick="addQuestion()">
+                            + Add Question
+                        </button>
+                    </div>
+
+                    <div id="questionsContainer">
+                        <!-- Questions will be added here dynamically -->
+                        <div class="question-item" id="questionTemplate" style="display: none;">
+                            <div class="question-header">
+                                <div class="question-number">Question #1</div>
+                                <button type="button" class="remove-question" onclick="removeQuestion(this)">
+                                    Remove
+                                </button>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Question Type</label>
+                                <select class="question-type-select" onchange="updateQuestionType(this)">
+                                    <option value="text">Text Answer</option>
+                                    <option value="multiple-choice">Multiple Choice</option>
+                                    <option value="image">Image Upload</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Question Text *</label>
+                                <textarea class="form-textarea question-text"
+                                          placeholder="What is the question you want to ask?"></textarea>
+                            </div>
+
+                            <!-- Multiple Choice Options (Hidden by default) -->
+                            <div class="choice-options" style="display: none;">
+                                <div class="form-group">
+                                    <label class="form-label">Choices (Select the correct one)</label>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_tmpl" class="correct-choice-radio" value="0" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice A *" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_tmpl" class="correct-choice-radio" value="1" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice B *" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_tmpl" class="correct-choice-radio" value="2" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice C (Optional)" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_tmpl" class="correct-choice-radio" value="3" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice D (Optional)" style="flex: 1;">
+                                    </div>
+                                    <div class="form-help">Select the radio button next to the correct choice.</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group correct-answer-group">
+                                <label class="form-label">Correct Answer *</label>
+                                <input type="text" class="form-input correct-answer"
+                                       placeholder="Enter the correct answer">
+                                <div class="form-help" id="answerHelp">For text questions, enter the exact answer text</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Next Location Hint</label>
+                                <input type="text" class="form-input next-hint"
+                                       placeholder="e.g., Look near the main entrance fountain">
+                                <div class="form-help">Hint for where to find the next QR code</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Points</label>
+                                <input type="number" class="points-input" value="10" min="1" max="100">
+                                <div class="form-help">Points awarded for correct answer (1-100)</div>
+                            </div>
+                        </div>
+
+                        <!-- First question (visible by default) -->
+                        <div class="question-item" data-question-index="1">
+                            <div class="question-header">
+                                <div class="question-number">Question #1</div>
+                                <button type="button" class="remove-question" onclick="removeQuestion(this)">
+                                    Remove
+                                </button>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Question Type</label>
+                                <select class="question-type-select" onchange="updateQuestionType(this)">
+                                    <option value="text">Text Answer</option>
+                                    <option value="multiple-choice">Multiple Choice</option>
+                                    <option value="image">Image Upload</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Question Text *</label>
+                                <textarea class="form-textarea question-text"
+                                          placeholder="What is the question you want to ask?" required></textarea>
+                            </div>
+
+                            <!-- Multiple Choice Options (Hidden by default) -->
+                            <div class="choice-options" style="display: none;">
+                                <div class="form-group">
+                                    <label class="form-label">Choices (Select the correct one)</label>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_1" class="correct-choice-radio" value="0" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice A *" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_1" class="correct-choice-radio" value="1" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice B *" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_1" class="correct-choice-radio" value="2" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice C (Optional)" style="flex: 1;">
+                                    </div>
+                                    <div class="choice-input-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                                        <input type="radio" name="correct_choice_1" class="correct-choice-radio" value="3" style="width: 20px; height: 20px; cursor: pointer;">
+                                        <input type="text" class="choice-input" placeholder="Choice D (Optional)" style="flex: 1;">
+                                    </div>
+                                    <div class="form-help">Select the radio button next to the correct choice.</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group correct-answer-group">
+                                <label class="form-label">Correct Answer *</label>
+                                <input type="text" class="form-input correct-answer"
+                                       placeholder="Enter the correct answer" required>
+                                <div class="form-help" id="answerHelp">For text questions, enter the exact answer text</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Next Location Hint</label>
+                                <input type="text" class="form-input next-hint"
+                                       placeholder="e.g., Look near the main entrance fountain">
+                                <div class="form-help">Hint for where to find the next QR code</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Points</label>
+                                <input type="number" class="points-input" value="10" min="1" max="100">
+                                <div class="form-help">Points awarded for correct answer (1-100)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <div class="button-group">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='/teacher/dashboard'">
+                            Cancel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="createHuntWithQuestions()" id="createBtn">
+                            Create Hunt
+                        </button>
+                    </div>
+                    <div style="color: #666; font-size: 0.9em;">
+                        <span id="questionCount">1</span> question(s) added
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        let questionCount = 1;
+
+        function syncCorrectAnswerCreate(questionItem, choiceIndex) {
+            const choices = questionItem.querySelectorAll('.choice-input');
+            const choiceText = choices[choiceIndex].value;
+            questionItem.querySelector('.correct-answer').value = choiceText;
+        }
+
+        function updateIfSelectedCreate(choiceInput) {
+            const questionItem = choiceInput.closest('.question-item');
+            const choiceGroup = choiceInput.closest('.choice-input-group');
+            const radio = choiceGroup.querySelector('.correct-choice-radio');
+            if (radio && radio.checked) {
+                syncCorrectAnswerCreate(questionItem, radio.value);
+            }
+        }
+
+        // Initialize the first question
+        document.addEventListener('DOMContentLoaded', function() {
+            updateQuestionNumbers();
+
+            // Add listeners to first question
+            const firstQuestion = document.querySelector('.question-item[data-question-index="1"]');
+            const radios = firstQuestion.querySelectorAll('.correct-choice-radio');
+            radios.forEach(radio => {
+                radio.onchange = function() { syncCorrectAnswerCreate(firstQuestion, this.value); };
+            });
+            const choiceInputs = firstQuestion.querySelectorAll('.choice-input');
+            choiceInputs.forEach(input => {
+                input.oninput = function() { updateIfSelectedCreate(this); };
+            });
+        });
+
+        function addQuestion() {
+            const template = document.getElementById('questionTemplate');
+            const newQuestion = template.cloneNode(true);
+            newQuestion.id = '';
+            newQuestion.style.display = 'block';
+            const nextIndex = document.querySelectorAll('.question-item:not(#questionTemplate)').length + 1;
+            newQuestion.setAttribute('data-question-index', nextIndex);
+
+            // Update question number
+            const questionNumber = newQuestion.querySelector('.question-number');
+            questionNumber.textContent = `Question #${nextIndex}`;
+
+            // Set unique name for radio buttons
+            const radios = newQuestion.querySelectorAll('.correct-choice-radio');
+            radios.forEach(radio => {
+                radio.name = `correct_choice_${nextIndex}`;
+                radio.onchange = function() { syncCorrectAnswerCreate(newQuestion, this.value); };
+            });
+
+            // Set listeners for text inputs
+            const choiceInputs = newQuestion.querySelectorAll('.choice-input');
+            choiceInputs.forEach(input => {
+                input.oninput = function() { updateIfSelectedCreate(this); };
+            });
+
+            // Clear inputs
+            newQuestion.querySelector('.question-text').value = '';
+            newQuestion.querySelector('.correct-answer').value = '';
+            newQuestion.querySelector('.next-hint').value = '';
+            newQuestion.querySelector('.points-input').value = '10';
+
+            // Reset choice inputs
+            choiceInputs[0].value = '';
+            choiceInputs[1].value = '';
+            choiceInputs[2].value = '';
+            choiceInputs[3].value = '';
+
+            // Hide choice options by default
+            newQuestion.querySelector('.choice-options').style.display = 'none';
+
+            // Add to container
+            document.getElementById('questionsContainer').appendChild(newQuestion);
+
+            questionCount++;
+            updateQuestionNumbers();
+            updateQuestionCount();
+
+            // Scroll to new question
+            newQuestion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function removeQuestion(button) {
+            const questionItem = button.closest('.question-item');
+            if (document.querySelectorAll('.question-item:not(#questionTemplate)').length > 1) {
+                questionItem.remove();
+                questionCount--;
+                updateQuestionNumbers();
+                updateQuestionCount();
+            } else {
+                alert('You must have at least one question in the hunt.');
+            }
+        }
+
+        function updateQuestionType(select) {
+            const questionItem = select.closest('.question-item');
+            const choiceOptions = questionItem.querySelector('.choice-options');
+            const correctAnswer = questionItem.querySelector('.correct-answer');
+            const correctAnswerGroup = questionItem.querySelector('.correct-answer-group');
+            const answerHelp = questionItem.querySelector('#answerHelp');
+
+            if (select.value === 'multiple-choice') {
+                choiceOptions.style.display = 'block';
+                correctAnswerGroup.style.display = 'none';
+            } else if (select.value === 'image') {
+                choiceOptions.style.display = 'none';
+                correctAnswerGroup.style.display = 'none';
+                correctAnswer.value = 'image_accepted';
+            } else {
+                choiceOptions.style.display = 'none';
+                correctAnswerGroup.style.display = 'block';
+                correctAnswer.placeholder = 'Enter the correct answer';
+                correctAnswer.readOnly = false;
+                answerHelp.textContent = 'For text questions, enter the exact answer text';
+            }
+        }
+
+        function updateQuestionNumbers() {
+            const questions = document.querySelectorAll('.question-item:not(#questionTemplate)');
+            questions.forEach((question, index) => {
+                const questionNumber = question.querySelector('.question-number');
+                questionNumber.textContent = `Question #${index + 1}`;
+                question.setAttribute('data-question-index', index + 1);
+            });
+            questionCount = questions.length;
+        }
+
+        function updateQuestionCount() {
+            document.getElementById('questionCount').textContent = questionCount;
+        }
+
+        function createHuntWithQuestions() {
+            const huntName = document.getElementById('huntName').value.trim();
+            const huntDescription = document.getElementById('huntDescription').value.trim();
+
+            if (!huntName) {
+                alert('Please enter a hunt name');
+                document.getElementById('huntName').focus();
+                return;
+            }
+
+            // Collect questions
+            const questions = [];
+            const questionItems = document.querySelectorAll('.question-item:not(#questionTemplate)');
+
+            for (let i = 0; i < questionItems.length; i++) {
+                const questionItem = questionItems[i];
+                const questionText = questionItem.querySelector('.question-text').value.trim();
+                const questionType = questionItem.querySelector('.question-type-select').value;
+                const correctAnswer = questionItem.querySelector('.correct-answer').value.trim();
+                const nextLocationHint = questionItem.querySelector('.next-hint').value.trim();
+                const points = parseInt(questionItem.querySelector('.points-input').value) || 10;
+
+                // Validate required fields
+                if (!questionText) {
+                    alert(`Question #${i + 1}: Please enter question text`);
+                    questionItem.querySelector('.question-text').focus();
+                    return;
+                }
+
+                if (!correctAnswer && questionType !== 'image') {
+                    alert(`Question #${i + 1}: Please enter a correct answer`);
+                    questionItem.querySelector('.correct-answer').focus();
+                    return;
+                }
+
+                // Collect choices for multiple-choice
+                let choices = [];
+                if (questionType === 'multiple-choice') {
+                    const choiceInputs = questionItem.querySelectorAll('.choice-input');
+                    choices = Array.from(choiceInputs).map(input => input.value.trim());
+
+                    // Validate choices
+                    const validChoices = choices.filter(choice => choice);
+                    if (validChoices.length < 2) {
+                        alert(`Question #${i + 1}: Please enter at least 2 choices for multiple choice`);
+                        return;
+                    }
+                }
+
+                questions.push({
+                    text: questionText,
+                    type: questionType,
+                    answer: correctAnswer,
+                    nextLocationHint: nextLocationHint,
+                    points: points,
+                    choices: choices
+                });
+            }
+
+            if (questions.length === 0) {
+                alert('Please add at least one question to the hunt');
+                return;
+            }
+
+            // Disable button and show loading
+            const btn = document.getElementById('createBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading-spinner"></span>Creating...';
+            btn.disabled = true;
+
+            // Send data to server
+            fetch('/teacher/create-hunt-with-questions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    huntName: huntName,
+                    huntDescription: huntDescription,
+                    questions: questions
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert(data.message || 'Hunt created successfully!');
+
+                    // Redirect to view hunt page
+                    if (data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                    } else if (data.hunt_id) {
+                        window.location.href = `/teacher/hunt/${data.hunt_id}/view`;
+                    } else {
+                        window.location.href = '/teacher/dashboard';
+                    }
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to create hunt'));
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Network error. Please try again.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>

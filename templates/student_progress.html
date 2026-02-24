@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Progress - {{ hunt.name }}</title>
+    <style>
+        /* (Keep all your CSS styles - they're fine) */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Back Link -->
+        <a href="/student/dashboard" class="back-link">
+            ← Back to Dashboard
+        </a>
+        
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1 class="hunt-title">
+                    <span>📊</span>
+                    My Progress: {{ hunt.name }}
+                </h1>
+                <div class="student-info">
+                    <span>👨‍🎓</span>
+                    Student: {{ session.get('student_name', 'Anonymous Student') }}
+                </div>
+                {% if progress.started_at %}
+                <div class="student-info">
+                    <span>⏰</span>
+                    Started: {{ progress.started_at.strftime('%b %d, %Y at %I:%M %p') if progress.started_at else 'Not started yet' }}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" onclick="window.print()">
+                    🖨️ Print Progress
+                </button>
+                <a href="/student/dashboard" class="btn btn-secondary">
+                    ← Dashboard
+                </a>
+            </div>
+        </div>
+        
+        {% if progress.score == 0 and not progress.completed_questions %}
+            <!-- Empty State - Not Started -->
+            <div class="empty-state">
+                <div class="empty-icon">🎯</div>
+                <h2>Hunt Not Started Yet</h2>
+                <p class="empty-message">
+                    You haven't started this scavenger hunt yet. Scan the first QR code to begin!
+                </p>
+                <a href="/student/start-hunt/{{ hunt.id }}" class="btn btn-primary">
+                    🚀 Start Hunt
+                </a>
+            </div>
+        {% else %}
+            <!-- Progress Summary -->
+            <div class="progress-summary">
+                <h2 class="summary-title">
+                    <span>📈</span>
+                    Progress Summary
+                </h2>
+                <div class="summary-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ progress.score }}</div>
+                        <div class="stat-label">Total Points</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ progress.completed_questions|length if progress.completed_questions else 0 }}</div>
+                        <div class="stat-label">Questions Completed</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{ hunt.questions|length if hunt.questions else 0 }}</div>
+                        <div class="stat-label">Total Questions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">
+                            {% if hunt.questions and hunt.questions|length > 0 %}
+                                {{ ((progress.completed_questions|length / hunt.questions|length) * 100)|int if progress.completed_questions else 0 }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </div>
+                        <div class="stat-label">Completion</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Progress Timeline -->
+            <div class="progress-timeline">
+                <h2 class="section-title">
+                    <span>🗺️</span>
+                    Your Journey
+                </h2>
+                
+                <div class="timeline">
+                    {% if hunt.questions %}
+                        {% for question in hunt.questions|sort(attribute='question_order') %}
+                        {% set is_completed = progress.completed_questions and question.qr_token in progress.completed_questions %}
+                        {% set is_current = question.question_order == progress.current_question %}
+                        
+                        <div class="timeline-item 
+                            {% if is_completed %}completed{% elif is_current %}current{% else %}upcoming{% endif %}">
+                            
+                            <div class="timeline-marker">
+                                {% if is_completed %}✓{% elif is_current %}📍{% else %}{{ question.question_order }}{% endif %}
+                            </div>
+                            
+                            <div class="question-header">
+                                <div class="question-title">
+                                    Question {{ question.question_order }}: {{ question.text[:100] }}{% if question.text|length > 100 %}...{% endif %}
+                                </div>
+                                <div class="question-status 
+                                    {% if is_completed %}status-completed
+                                    {% elif is_current %}status-current
+                                    {% else %}status-upcoming{% endif %}">
+                                    {% if is_completed %}Completed
+                                    {% elif is_current %}Current
+                                    {% else %}Upcoming{% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="question-content">
+                                {% if is_completed %}
+                                <p>✅ You answered this question correctly!</p>
+                                {% if question.next_location_hint %}
+                                <p><strong>Next clue received:</strong> {{ question.next_location_hint }}</p>
+                                {% endif %}
+                                {% elif is_current %}
+                                <p>📍 This is your current location. Scan the QR code to answer!</p>
+                                {% if question.hint %}
+                                <p><strong>Hint:</strong> {{ question.hint }}</p>
+                                {% endif %}
+                                {% else %}
+                                <p>🔒 This question is locked. Complete previous questions to unlock.</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="question-details">
+                                <div class="detail">
+                                    <span>⭐</span>
+                                    Points: <span class="detail-value">{{ question.points }}</span>
+                                </div>
+                                <div class="detail">
+                                    <span>🔤</span>
+                                    Type: <span class="detail-value">{{ question.question_type|title if question.question_type else 'Text' }}</span>
+                                </div>
+                                {% if is_completed %}
+                                <div class="detail">
+                                    <span>✅</span>
+                                    Status: <span class="detail-value">Completed</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if is_current %}
+                            <div class="action-buttons">
+                                {% set current_question = none %}
+                                {% for q in hunt.questions %}
+                                    {% if q.question_order == progress.current_question %}
+                                        {% set current_question = q %}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if current_question %}
+                                <a href="/student/question/{{ current_question.qr_token }}" class="btn btn-primary">
+                                    📱 Continue Here
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-state">No questions in this hunt yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Score Breakdown -->
+            <div class="score-breakdown">
+                <h2 class="section-title">
+                    <span>⭐</span>
+                    Score Breakdown
+                </h2>
+                <div class="score-grid">
+                    {% if hunt.questions %}
+                        {% for question in hunt.questions|sort(attribute='question_order') %}
+                        {% set is_completed = progress.completed_questions and question.qr_token in progress.completed_questions %}
+                        <div class="score-item">
+                            <div class="score-question">
+                                Q{{ question.question_order }}: {{ question.text[:50] }}{% if question.text|length > 50 %}...{% endif %}
+                            </div>
+                            <div class="score-points">
+                                {% if is_completed %}+{{ question.points }}{% else %}0{% endif %} pts
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No questions to display.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Time Tracking -->
+            <div class="time-tracking">
+                <h2 class="section-title">
+                    <span>⏱️</span>
+                    Time Tracking
+                </h2>
+                <div class="time-stats">
+                    <div class="time-item">
+                        <div class="time-value">
+                            {% if progress.started_at %}
+                            {{ progress.started_at.strftime('%b %d') if progress.started_at else '--' }}
+                            {% else %}
+                            --
+                            {% endif %}
+                        </div>
+                        <div class="time-label">Start Date</div>
+                    </div>
+                    <div class="time-item">
+                        <div class="time-value">
+                            {% if progress.completed_questions and progress.completed_questions|length == hunt.questions|length %}
+                                {{ now.strftime('%b %d') if now else 'Complete' }}
+                            {% else %}
+                                In Progress
+                            {% endif %}
+                        </div>
+                        <div class="time-label">Completion Date</div>
+                    </div>
+                    <div class="time-item">
+                        <div class="time-value">
+                            {{ progress.completed_questions|length if progress.completed_questions else 0 }}/{{ hunt.questions|length if hunt.questions else 0 }}
+                        </div>
+                        <div class="time-label">Questions</div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if progress.completed_questions and progress.completed_questions|length == hunt.questions|length %}
+            <!-- Completion Message -->
+            <div class="completion-message">
+                <div class="completion-icon">🏆</div>
+                <h2 class="completion-title">Hunt Complete! 🎉</h2>
+                <p class="completion-text">
+                    Congratulations! You've successfully completed the "{{ hunt.name }}" scavenger hunt 
+                    with a total score of <strong>{{ progress.score }}</strong> points!
+                </p>
+                <div class="action-buttons">
+                    <a href="/student/dashboard" class="btn btn-primary">
+                        🏠 Back to Dashboard
+                    </a>
+                    <button class="btn" onclick="window.print()" style="background: white; color: #FF9800;">
+                        🖨️ Print Certificate
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    
+    <script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Progress page loaded for hunt:', '{{ hunt.name }}');
+            
+            // Add animation to current question
+            const currentQuestion = document.querySelector('.timeline-item.current');
+            if (currentQuestion) {
+                currentQuestion.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Calculate time spent
+            function calculateTimeSpent() {
+                const startedAt = '{{ progress.started_at }}';
+                if (startedAt && startedAt !== 'None') {
+                    const startDate = new Date(startedAt);
+                    const now = new Date();
+                    const diffMs = now - startDate;
+                    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+                    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    console.log(`Time spent: ${diffHours}h ${diffMinutes}m`);
+                }
+            }
+            
+            calculateTimeSpent();
+        });
+        
+        // Share progress functionality
+        function shareProgress() {
+            const score = {{ progress.score if progress.score else 0 }};
+            const completed = {{ progress.completed_questions|length if progress.completed_questions else 0 }};
+            const total = {{ hunt.questions|length if hunt.questions else 0 }};
+            const huntName = '{{ hunt.name }}';
+            
+            const shareText = `I scored ${score} points in the "${huntName}" scavenger hunt! Completed ${completed}/${total} questions.`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Scavenger Hunt Progress',
+                    text: shareText,
+                    url: window.location.href
+                });
+            } else {
+                // Copy to clipboard
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Progress copied to clipboard!');
+                });
+            }
+        }
+        
+        // Add share button if not present
+        if (!document.querySelector('.btn-share')) {
+            const actionButtons = document.querySelector('.action-buttons');
+            if (actionButtons) {
+                const shareBtn = document.createElement('button');
+                shareBtn.className = 'btn';
+                shareBtn.innerHTML = '📤 Share Progress';
+                shareBtn.style.background = '#2196F3';
+                shareBtn.style.color = 'white';
+                shareBtn.onclick = shareProgress;
+                actionButtons.appendChild(shareBtn);
+            }
+        }
+        
+        // Auto-refresh progress every 30 seconds if not complete
+        const isComplete = {{ progress.completed_questions|length if progress.completed_questions else 0 }} === {{ hunt.questions|length if hunt.questions else 0 }};
+        if (!isComplete) {
+            setTimeout(() => {
+                console.log('Auto-refreshing progress...');
+                window.location.reload();
+            }, 30000); // 30 seconds
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ctrl/Cmd + P for print
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+                e.preventDefault();
+                window.print();
+            }
+            // Esc to go back
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+    </script>
+</body>
+</html>
