@@ -374,6 +374,7 @@ def view_hunt(hunt_id):
             'id': question.id,
             'order': question.question_order,
             'type': question.question_type,
+            'question_type': question.question_type, # Add this for template compatibility
             'text': question.text,
             'hint': question.hint,
             'next_location_hint': question.next_location_hint,
@@ -381,11 +382,12 @@ def view_hunt(hunt_id):
             'qr_url': qr_url,
             'qr_text': qr_text,
             'points': question.points,
+            'is_new_location': question.is_new_location, # NEW FIELD
             'is_last': question.question_order == len(hunt.questions)
         })
 
-    # Sort by question order
-    questions.sort(key=lambda x: x['order'])
+    # Sort by question order, handle None values safely
+    questions.sort(key=lambda x: x['order'] if x['order'] is not None else 0)
 
     return render_template('view_hunt.html',
                          hunt=hunt,
